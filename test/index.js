@@ -40,6 +40,15 @@ test('supports registration of a single action using function', function (t) {
   });
 });
 
+test('supports registration of a single action using function', function (t) {
+  return Ottomaton().register(new Ottomaton.Action(function (line) {
+    return [line];
+  }, function (name) {
+    this.test = name;
+  })).run(['test Allain']).then(function (result) {
+    t.equal(result.test, 'test Allain');
+  });
+});
 
 test('supports registration of actions array', function (t) {
   var otto = new Ottomaton();

@@ -1,8 +1,10 @@
 var Promise = require('native-promise-only');
 var reduce = require('promise-reduce');
-var util = require('util');
 
 module.exports = Ottomaton;
+
+var Action = Ottomaton.Action = require('./lib/action');
+var LineError = Ottomaton.LineError = require('./lib/line-error');
 
 function Ottomaton() {
   if (!(this instanceof Ottomaton)) return new Ottomaton();
@@ -10,48 +12,33 @@ function Ottomaton() {
   this.actions = [];
 }
 
-function OttomatonLineError(lines) {
-  Error.call(this);
-
-  this.lines = Array.isArray(lines) ? lines : [lines];
-
-  this.message = 'Line Errors:\n' + lines.join('\n');
-}
-
-util.inherits(OttomatonLineError, Error);
-
 Ottomaton.prototype = {
   register: function(matcher, handler) {
     var self = this;
 
-    if (!handler) {
-      if (Array.isArray(matcher)) {
-        matcher.forEach(this.register.bind(this));
-        return this;
-      } else if (typeof matcher === 'object') {
-        if (matcher.handler && matcher.matcher) {
-          handler = matcher.handler;
-          matcher = matcher.matcher;
-        } else {
-          Object.keys(matcher).forEach(function(m) {
-            self.register(m, matcher[m]);
-          });
-          return this;
-        }
+    var action;
+
+    if (handler) {
+      action = new Action(matcher, handler);
+    } else if (matcher instanceof Action) {
+      action = matcher; 
+    } else if (Array.isArray(matcher)) {
+      matcher.forEach(this.register.bind(this));
+    } else if (typeof matcher === 'object') {
+      if (matcher.handler && matcher.matcher) {
+        action = new Action(matcher.matcher, matcher.handler);
       } else {
-        throw new Error('invalid arguments');
+        Object.keys(matcher).forEach(function(m) {
+          self.register(m, matcher[m]);
+        });
       }
+    } else {
+      throw new Error('invalid arguments');
     }
 
-    var m = normalizeMatcher(matcher);
-    if (m) {
-      this.actions.push({
-        matcher: m,
-        handler: handler 
-      });
-    } else {
-      throw new Error('invalid matcher type given: ' + typeof matcher);
-    } 
+    if (action) {
+      this.actions.push(action);
+    }
 
     return this;
   },
@@ -74,13 +61,41 @@ Ottomaton.prototype = {
     }).filter(Boolean);
 
     if (unrecognizedLines.length) {
-      return Promise.reject(new OttomatonLineError(unrecognizedLines));
+      return Promise.reject(new LineError(unrecognizedLines));
     }
 
 
     return Promise.resolve(lines).then(reduce(function(state, line) {
-      return performLine(state, actions, line);
+      return performLine(actions, line);
     }, state));
+
+    function performLine(actions, line) {
+      var recognized;
+      var newLine;
+
+      return Promise.resolve(actions).then(reduce(function(state, action) {
+        if (newLine) return state; // skip execution
+
+        var args = action.matcher(line);
+        if (args) {
+          recognized = true;
+          return Promise.resolve(action.handler.apply(state, args)).then(function(result) {
+            if (typeof result === 'string') {
+              newLine = result;
+            }
+            return state;
+          });
+        }
+
+        return state;
+      }, state)).then(function(state) {
+        if (!recognized) throw new LineError('Unrecognized Line: ' + line);
+
+        if (newLine) return performLine(actions, newLine);
+
+        return state;
+      });
+    }
   },
 
   _findMatches: function(line) {
@@ -90,55 +105,3 @@ Ottomaton.prototype = {
   }
 };
 
-function performLine(state, actions, line) {
-  var recognized;
-  var newLine;
-
-  return Promise.resolve(actions).then(reduce(function(state, action) {
-    if (newLine) return state; // skip execution
-
-    var args = action.matcher(line);
-    if (args) {
-      recognized = true;
-      return Promise.resolve(action.handler.apply(state, args)).then(function(result) {
-        if (typeof result === 'string') {
-          newLine = result;
-        }
-        return state;
-      });
-    }
-
-    return state;
-  }, state)).then(function(state) {
-    if (!recognized) throw new OttomatonLineError('Unrecognized Line: ' + line);
-
-    if (newLine) return performLine(state, actions, newLine);
-
-    return state;
-  });
-}
-
-function normalizeMatcher(matcher) {
-  var m;
-
-  if (typeof matcher === 'string') {
-    m = buildMatcherFromRegExp(new RegExp('^' + matcher.replace(/"[^"]+"/g, '(.+)') + '$'));
-  } else if (matcher instanceof RegExp) {
-    m = buildMatcherFromRegExp(matcher);
-  } else if (typeof matcher === 'function') {
-    m = matcher;
-  } 
-
-  return m;
-}
-
-function buildMatcherFromRegExp(regexp) {
-  return function(line) {
-    var args = regexp.exec(line);
-    if (args)  {
-      args.shift();
-    }
-
-    return args;
-  };  
-}
