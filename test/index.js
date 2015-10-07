@@ -139,7 +139,15 @@ test('cli works', function (t) {
     t.equal(out, 'A\nB\n');
     t.end();
   });
+});
 
+test('piped cli works', function(t) {
+  process.chdir(__dirname);
+  require('child_process').exec('cat ./cli-test.txt | ../bin/otto --lib ./libraries/a.js --lib ./libraries/b', function (err, out) {
+    t.error(err);
+    t.equal(out, 'A\nB\n');
+    t.end();
+  });
 });
 
 test('cli missing lib failures work', function (t) {

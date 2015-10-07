@@ -8,6 +8,22 @@ A Node.js toolkit for writing automation script DSLs. It is heavily influenced b
 npm install ottomaton
 ```
 
+For CLI Usage:
+
+```bash
+npm install -g ottomaton
+```
+
+## Example CLI Usage
+
+```bash
+# run a script file
+otto --lib libs/a.js --lib libs/b script.txt
+
+# run the piped script
+cat script.txt | otto --lib libs/a.js --lib libs/b
+```
+
 ## Example Usage
 
 ```js

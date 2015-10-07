@@ -34,20 +34,30 @@ try {
   process.exit(1);
 }
 
-if (!argv._.length) {
-  console.error(chalk.red('ERROR: no scripts specified'));
-  process.exit(1);
+if (argv._.length) {
+  Promise.resolve(argv._).then(reduce(function (state, srcPath) {
+    srcPath = path.resolve(cwd, srcPath);
+    if (!fs.existsSync(srcPath)) {
+      throw new Error('file could not be loaded: ' + srcPath);
+    }
+
+    return otto.run(fs.readFileSync(srcPath, 'utf-8'), state);
+  }, {})).catch(function (err) {
+    debug('ERROR %j', err);
+    console.error(chalk.red('ERROR: ' + err.message));
+    process.exit(1);
+  });
+} else {
+  var content = [];
+  process.stdin.resume();
+  process.stdin.on('data', function(buf) {
+    content.push(buf.toString());
+  });
+  process.stdin.on('end', function() {
+    return otto.run(content.join(''), {}).catch(function (err) {
+      debug('ERROR %j', err);
+      console.error(chalk.red('ERROR: ' + err.message));
+      process.exit(1);
+    });
+  });
 }
-
-Promise.resolve(argv._).then(reduce(function(state, srcPath) {
-  srcPath = path.resolve(cwd, srcPath);
-  if (!fs.existsSync(srcPath)) {
-    throw new Error('file could not be loaded: ' + srcPath);
-  }
-
-  return otto.run(fs.readFileSync(srcPath, 'utf-8'), state);
-}, {})).catch(function(err) {
-  debug('ERROR %j', err);
-  console.error(chalk.red('ERROR: ' + err.message));
-  process.exit(1);
-});
