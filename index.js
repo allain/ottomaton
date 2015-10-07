@@ -1,6 +1,5 @@
 var Promise = require('native-promise-only');
 var reduce = require('promise-reduce');
-var defaults = require('defaults');
 var util = require('util');
 
 module.exports = Ottomaton;
@@ -58,8 +57,6 @@ Ottomaton.prototype = {
   },
 
   run: function(lines, state) {
-    var self = this;
-
     state = state || {};
 
     var actions = this.actions;
@@ -118,7 +115,7 @@ function performLine(state, actions, line) {
     if (newLine) return performLine(state, actions, newLine);
 
     return state;
-  })
+  });
 }
 
 function normalizeMatcher(matcher) {
