@@ -20,7 +20,13 @@ Ottomaton.prototype = {
   // Queue up actions or Promises which resolve to actions or array of actions for later registration
   register: function(matcher, handler) {
     if (handler) {
-      this.registrations.push(new Action(matcher, handler));
+      if (Array.isArray(matcher)) {
+        matcher.forEach(function(m) {
+          this.registrations.push(Action(m, handler));
+        }.bind(this));
+      } else {
+        this.registrations.push(Action(matcher, handler));
+      }
     } else if (matcher && typeof matcher.then === 'function') {
       this.registrations.push(matcher);
     } else if (typeof matcher === 'function') {
@@ -31,7 +37,7 @@ Ottomaton.prototype = {
       matcher.forEach(this.register.bind(this));
     } else if (typeof matcher === 'object') {
       if (matcher.handler && matcher.matcher) {
-        this.registrations.push(new Action(matcher.matcher, matcher.handler));
+        this.registrations.push(Action(matcher.matcher, matcher.handler));
       } else {
         Object.keys(matcher).forEach(function(m) {
           this.register(m, matcher[m]);

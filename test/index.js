@@ -22,6 +22,14 @@ test('supports registration of a single action using regex', function (t) {
   });
 });
 
+test('supports registration of an array of matchers for a single handler', function (t) {  
+  return Ottomaton().register([/^(a)$/, /^(b)$/], function (line) {
+    this.result += line;
+  }).run(['a', 'b'], {result: ''}).then(function (result) {
+    t.equal(result.result, 'ab');
+  });
+});
+
 test('supports registration of a single action using string', function (t) {
   return Ottomaton().register('test "NAME"', function (name) {
     this.test = name;
