@@ -22,7 +22,7 @@ Ottomaton.prototype = {
     if (handler) {
       if (Array.isArray(matcher)) {
         matcher.forEach(function(m) {
-          this.registrations.push(Action(m, handler));
+          this.register(m, handler);
         }.bind(this));
       } else {
         this.registrations.push(Action(matcher, handler));
@@ -83,6 +83,10 @@ Ottomaton.prototype = {
         if (line === 'FINISH') return false;
 
         if (any(actions, function(action) {
+          if (typeof action.matcher !== 'function') {
+            throw new Error('invalid matcher: ' + action.matcher);
+          }
+
           return action.matcher(line);
         })) {
           return false;
