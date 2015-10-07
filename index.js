@@ -32,7 +32,13 @@ Ottomaton.prototype = {
     } else if (typeof matcher === 'function') {
       this.registrations.push(matcher(this));
     } else if (matcher instanceof Action) {
-      this.registrations.push(matcher);
+      if (Array.isArray(matcher.matcher)) {
+        matcher.matcher.forEach(function(m) {
+          this.register(m, matcher.handler); 
+        }.bind(this));
+      } else {
+        this.registrations.push(matcher);
+      }
     } else if (Array.isArray(matcher)) {
       matcher.forEach(this.register.bind(this));
     } else if (typeof matcher === 'object') {
