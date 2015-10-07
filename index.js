@@ -105,13 +105,7 @@ Ottomaton.prototype = {
 
           return state;
         });
-      }I
-    });
-  },
-
-  _findMatches: function(line) {
-    return this.actions.filter(function(action) {
-      return action.matcher(line);
+      }
     });
   }
 };
