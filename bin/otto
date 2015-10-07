@@ -6,7 +6,6 @@ var Promise = require('native-promise-only');
 var reduce = require('promise-reduce');
 var fs = require('fs');
 var path = require('path');
-var debug = require('debug')('ottomaton');
 
 var otto = Ottomaton();
 
