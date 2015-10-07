@@ -58,7 +58,7 @@ test('supports registration of actions array', function (t) {
     }
   }]);
 
-  t.equal(otto.actions.length, 1);
+  t.equal(otto.registrations.length, 1);
   t.end();
 });
 
@@ -69,7 +69,7 @@ test('supports registration of hash', function (t) {
     }
   });
 
-  t.equal(otto.actions.length, 1);
+  t.equal(otto.registrations.length, 1);
   t.end();
 });
 
@@ -129,6 +129,22 @@ test('action "this" is same passed in state across runs', function (t) {
     'test'
   ], state).then(function (result) {
     t.equal(result.handled, 3);
+  });
+});
+
+test('registering an action generator function works', function (t) {
+  var ottomaton = Ottomaton({a: 'A!'});
+
+  return ottomaton.register(function(otto) {
+    t.strictEqual(otto, ottomaton, 'ottomaton should be passed as argument to generator');
+
+    return [Ottomaton.Action('a', function() {
+      this.result = otto.opts.a;
+    })];
+  }).run([
+    'a'
+  ]).then(function (result) {
+    t.equal(result.result, 'A!');
   });
 });
 

@@ -1,43 +1,41 @@
 var Promise = require('native-promise-only');
 var reduce = require('promise-reduce');
+var flatten = require('fj-flatten');
 
 module.exports = Ottomaton;
 
 var Action = Ottomaton.Action = require('./lib/action');
 var LineError = Ottomaton.LineError = require('./lib/line-error');
 
-function Ottomaton() {
-  if (!(this instanceof Ottomaton)) return new Ottomaton();
+function Ottomaton(opts) {
+  if (!(this instanceof Ottomaton)) return new Ottomaton(opts);
 
-  this.actions = [];
+  this.opts = opts || {};
+
+  this.registrations = [];
 }
 
 Ottomaton.prototype = {
+  // Queue up actions or Promises which resolve to actions or array of actions for later registration
   register: function(matcher, handler) {
-    var self = this;
-
-    var action;
-
     if (handler) {
-      action = new Action(matcher, handler);
+      this.registrations.push(new Action(matcher, handler));
+    } else if (typeof matcher === 'function') {
+      this.registrations.push(matcher(this));
     } else if (matcher instanceof Action) {
-      action = matcher; 
+      this.registrations.push(matcher);
     } else if (Array.isArray(matcher)) {
       matcher.forEach(this.register.bind(this));
     } else if (typeof matcher === 'object') {
       if (matcher.handler && matcher.matcher) {
-        action = new Action(matcher.matcher, matcher.handler);
+        this.registrations.push(new Action(matcher.matcher, matcher.handler));
       } else {
         Object.keys(matcher).forEach(function(m) {
-          self.register(m, matcher[m]);
-        });
+          this.register(m, matcher[m]);
+        }.bind(this));
       }
     } else {
       throw new Error('invalid arguments');
-    }
-
-    if (action) {
-      this.actions.push(action);
     }
 
     return this;
@@ -46,56 +44,56 @@ Ottomaton.prototype = {
   run: function(lines, state) {
     state = state || {};
 
-    var actions = this.actions;
+    return Promise.all(this.registrations).then(flatten).then(function(actions) {
+      if (typeof lines === 'string') {
+        lines = lines.split(/[\r\n]+/g);
+      }
 
-    if (typeof lines === 'string') {
-      lines = lines.split(/[\r\n]+/g);
-    }
+      var unrecognizedLines = lines.map(function (line, index) {
+        var actionMatches = actions.filter(function (action) {
+          return !!action.matcher(line);
+        });
 
-    var unrecognizedLines = lines.map(function(line, index) {
-      var actionMatches = actions.filter(function(action) {
-        return !!action.matcher(line);
-      });
+        return actionMatches.length ? null : 'Unrecognized Line: #' + (index + 1) + ': ' + line;
+      }).filter(Boolean);
 
-      return actionMatches.length ? null : 'Unrecognized Line: #' + (index + 1) + ': ' + line;
-    }).filter(Boolean);
-
-    if (unrecognizedLines.length) {
-      return Promise.reject(new LineError(unrecognizedLines));
-    }
+      if (unrecognizedLines.length) {
+        throw new LineError(unrecognizedLines);
+      }
 
 
-    return Promise.resolve(lines).then(reduce(function(state, line) {
-      return performLine(actions, line);
-    }, state));
+      return Promise.resolve(lines).then(reduce(function (state, line) {
+        return performLine(actions, line);
+      }, state));
 
-    function performLine(actions, line) {
-      var recognized;
-      var newLine;
+      function performLine(actions, line) {
+        var recognized;
+        var newLine;
 
-      return Promise.resolve(actions).then(reduce(function(state, action) {
-        if (newLine) return state; // skip execution
+        return Promise.resolve(actions).then(reduce(function (state, action) {
+          if (newLine) return state; // skip execution
 
-        var args = action.matcher(line);
-        if (args) {
-          recognized = true;
-          return Promise.resolve(action.handler.apply(state, args)).then(function(result) {
-            if (typeof result === 'string') {
-              newLine = result;
-            }
-            return state;
-          });
-        }
+          var args = action.matcher(line);
+          if (args) {
+            recognized = true;
+            return Promise.resolve(action.handler.apply(state, args)).then(function (result) {
+              if (typeof result === 'string') {
+                newLine = result;
+              }
+              return state;
+            });
+          }
 
-        return state;
-      }, state)).then(function(state) {
-        if (!recognized) throw new LineError('Unrecognized Line: ' + line);
+          return state;
+        }, state)).then(function (state) {
+          if (!recognized) throw new LineError('Unrecognized Line: ' + line);
 
-        if (newLine) return performLine(actions, newLine);
+          if (newLine) return performLine(actions, newLine);
 
-        return state;
-      });
-    }
+          return state;
+        });
+      }
+    });
   },
 
   _findMatches: function(line) {
