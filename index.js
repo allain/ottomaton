@@ -52,7 +52,7 @@ Ottomaton.prototype = {
       }
 
       var unrecognizedLines = lines.map(function (line, index) {
-        if (line.match(/^finish$/i)) return false;
+        if (line === 'FINISH') return false;
 
         if (any(actions, function(action) {
           return action.matcher(line);
@@ -62,6 +62,7 @@ Ottomaton.prototype = {
           return 'Unrecognized Line: #' + (index + 1) + ': ' + line;
         }
       }).filter(Boolean);
+
       if (unrecognizedLines.length) {
         throw new LineError(unrecognizedLines);
       }
@@ -96,15 +97,15 @@ Ottomaton.prototype = {
 
           return state;
         }, state)).then(function (state) {
-          if (!line.match(/^finish$/i) && !recognized) {
+          if (!line.match(/^FINISH|DONE$/i) && !recognized) {
             throw new LineError('Unrecognized Line: ' + line);
           }
 
-          if (newLine) return performLine(actions, newLine);
+          if (newLine && !newLine.match(/^FINISH|DONE$/)) return performLine(actions, newLine);
 
           return state;
         });
-      }
+      }I
     });
   },
 
