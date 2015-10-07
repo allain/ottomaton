@@ -58,11 +58,6 @@ Ottomaton.prototype = {
         Action(/^\s*(#|REM )/i, function() {
           return 'DONE';
         }),
-
-        // Ignore portion of line with // on end (like this one)
-        Action(/^(.*)\/\//, function(start) {
-          return start.trim() || 'DONE';
-        })
       ]);
     }
 

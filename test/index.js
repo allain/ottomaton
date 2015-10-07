@@ -184,7 +184,6 @@ test('supports commented lines', function () {
     '# This is ignored',
     '#This',
     'Rem This is ignored',
-    '  a // This portion is ignored',
     'a'
   ]);
 });
