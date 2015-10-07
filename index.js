@@ -1,27 +1,35 @@
 var Promise = require('native-promise-only');
 var reduce = require('promise-reduce');
 var defaults = require('defaults');
+var util = require('util');
 
 module.exports = Ottomaton;
 
-function Ottomaton(opts) {
-  if (!(this instanceof Ottomaton)) return new Ottomaton(opts);
-
-  opts = defaults(opts, {
-    actions: []
-  });
+function Ottomaton() {
+  if (!(this instanceof Ottomaton)) return new Ottomaton();
 
   this.actions = [];
-
-  opts.actions.forEach(this.register.bind(this));
 }
+
+function OttomatonLineError(lines) {
+  Error.call(this);
+
+  this.lines = Array.isArray(lines) ? lines : [lines];
+
+  this.message = 'Line Errors:\n' + lines.join('\n');
+}
+
+util.inherits(OttomatonLineError, Error);
 
 Ottomaton.prototype = {
   register: function(matcher, handler) {
     var self = this;
 
     if (!handler) {
-      if (typeof matcher === 'object') {
+      if (Array.isArray(matcher)) {
+        matcher.forEach(this.register.bind(this));
+        return this;
+      } else if (typeof matcher === 'object') {
         if (matcher.handler && matcher.matcher) {
           handler = matcher.handler;
           matcher = matcher.matcher;
@@ -50,10 +58,32 @@ Ottomaton.prototype = {
   },
 
   run: function(lines, state) {
+    var self = this;
+
+    state = state || {};
+
     var actions = this.actions;
+
+    if (typeof lines === 'string') {
+      lines = lines.split(/[\r\n]+/g);
+    }
+
+    var unrecognizedLines = lines.map(function(line, index) {
+      var actionMatches = actions.filter(function(action) {
+        return !!action.matcher(line);
+      });
+
+      return actionMatches.length ? null : 'Unrecognized Line: #' + (index + 1) + ': ' + line;
+    }).filter(Boolean);
+
+    if (unrecognizedLines.length) {
+      return Promise.reject(new OttomatonLineError(unrecognizedLines));
+    }
+
+
     return Promise.resolve(lines).then(reduce(function(state, line) {
       return performLine(state, actions, line);
-    }, state || {}));
+    }, state));
   },
 
   _findMatches: function(line) {
@@ -64,23 +94,31 @@ Ottomaton.prototype = {
 };
 
 function performLine(state, actions, line) {
-  var recognized = false;
+  var recognized;
+  var newLine;
 
   return Promise.resolve(actions).then(reduce(function(state, action) {
+    if (newLine) return state; // skip execution
+
     var args = action.matcher(line);
     if (args) {
       recognized = true;
-      return Promise.resolve(action.handler.apply(state, args)).then(function() {
+      return Promise.resolve(action.handler.apply(state, args)).then(function(result) {
+        if (typeof result === 'string') {
+          newLine = result;
+        }
         return state;
       });
     }
 
     return state;
-  }, state)).then(function(result) {
-    if (!recognized) throw new Error('Unrecognized line: ' + line);
+  }, state)).then(function(state) {
+    if (!recognized) throw new OttomatonLineError('Unrecognized Line: ' + line);
 
-    return result;
-  }); 
+    if (newLine) return performLine(state, actions, newLine);
+
+    return state;
+  })
 }
 
 function normalizeMatcher(matcher) {
