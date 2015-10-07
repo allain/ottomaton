@@ -57,7 +57,7 @@ Ottomaton.prototype = {
         // Ignore commented lines
         Action(/^\s*(#|REM )/i, function() {
           return 'DONE';
-        }),
+        })
       ]);
     }
 
