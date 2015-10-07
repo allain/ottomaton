@@ -148,6 +148,30 @@ test('registering an action generator function works', function (t) {
   });
 });
 
+test('supports an action generator that returns a promise', function (t) {
+  var ottomaton = Ottomaton({a: 'A!'});
+
+  return ottomaton.register(function(otto) {
+    var actions = [Ottomaton.Action('a', function() {
+      this.result = otto.opts.a;
+    })];
+
+    return Promise.resolve(actions);
+  }).run([
+    'a'
+  ]).then(function (result) {
+    t.equal(result.result, 'A!');
+  });
+});
+
+test('implicitly adds a FINISH line at end of scripts', function(t) {
+  var ottomaton = Ottomaton();
+
+  ottomaton.register('FINISH', function() {
+    t.end();
+  }).run([]);
+});
+
 test('cli works', function (t) {
   process.chdir(__dirname);
   require('child_process').exec('../bin/otto --lib ./libraries/a.js --lib ./libraries/b ./cli-test.txt', function (err, out) {
@@ -168,13 +192,13 @@ test('piped cli works', function(t) {
 
 test('cli missing lib failures work', function (t) {
   process.chdir(__dirname);
+
   require('child_process').exec('../bin/otto --lib ./libraries/missing.js ./cli-test.txt', function (err, out, stderr) {
     t.ok(err);
     t.equal(stderr, 'ERROR: unable to register library "./libraries/missing.js"\n');
     t.end();
   });
 });
-
 
 test('cli line errors work', function (t) {
   process.chdir(__dirname);

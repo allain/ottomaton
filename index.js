@@ -20,6 +20,8 @@ Ottomaton.prototype = {
   register: function(matcher, handler) {
     if (handler) {
       this.registrations.push(new Action(matcher, handler));
+    } else if (matcher && typeof matcher.then === 'function') {
+      this.registrations.push(matcher);
     } else if (typeof matcher === 'function') {
       this.registrations.push(matcher(this));
     } else if (matcher instanceof Action) {
@@ -50,17 +52,21 @@ Ottomaton.prototype = {
       }
 
       var unrecognizedLines = lines.map(function (line, index) {
-        var actionMatches = actions.filter(function (action) {
-          return !!action.matcher(line);
-        });
+        if (line.match(/^finish$/i)) return false;
 
-        return actionMatches.length ? null : 'Unrecognized Line: #' + (index + 1) + ': ' + line;
+        if (any(actions, function(action) {
+          return action.matcher(line);
+        })) {
+          return false;
+        } else {
+          return 'Unrecognized Line: #' + (index + 1) + ': ' + line;
+        }
       }).filter(Boolean);
-
       if (unrecognizedLines.length) {
         throw new LineError(unrecognizedLines);
       }
 
+      lines.push('FINISH');
 
       return Promise.resolve(lines).then(reduce(function (state, line) {
         return performLine(actions, line);
@@ -86,7 +92,9 @@ Ottomaton.prototype = {
 
           return state;
         }, state)).then(function (state) {
-          if (!recognized) throw new LineError('Unrecognized Line: ' + line);
+          if (!line.match(/^finish$/i) && !recognized) {
+            throw new LineError('Unrecognized Line: ' + line);
+          }
 
           if (newLine) return performLine(actions, newLine);
 
@@ -102,4 +110,11 @@ Ottomaton.prototype = {
     });
   }
 };
+
+function any(array, predicate) {
+  for (var i=0; i < array.length; i++) {
+    if (predicate(array[i])) return true;
+  }
+  return false;
+}
 
