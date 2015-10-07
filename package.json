@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "blue-tape test/*.js",
-    "lint": "eslint --fix --config .eslintrc index.js lib/*.src test/*.js"
+    "lint": "eslint --fix --config .eslintrc index.js lib/*.src test/*.js",
+    "prepublish": "npm run test && npm run lint"
   },
   "repository": {
     "type": "git",
