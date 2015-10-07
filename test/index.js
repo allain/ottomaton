@@ -33,20 +33,20 @@ test('supports registration of a single action using string', function (t) {
 test('supports registration of a single action using function', function (t) {
   return Ottomaton().register(function (line) {
     return [line];
-  }, function (name) {
-    this.test = name;
-  }).run(['test Allain']).then(function (result) {
-    t.equal(result.test, 'test Allain');
+  }, function (l) {
+    this.results.push(l);
+  }).run(['test Allain'], {results: []}).then(function (result) {
+    t.deepEqual(result.results, ['test Allain', 'FINISH']);
   });
 });
 
-test('supports registration of a single action using function', function (t) {
+test('supports registration of a single action', function (t) {
   return Ottomaton().register(new Ottomaton.Action(function (line) {
     return [line];
-  }, function (name) {
-    this.test = name;
-  })).run(['test Allain']).then(function (result) {
-    t.equal(result.test, 'test Allain');
+  }, function (l) {
+    this.results.push(l);
+  })).run(['test Allain'], {results: []}).then(function (result) {
+    t.deepEqual(result.results, ['test Allain', 'FINISH']);
   });
 });
 
@@ -135,10 +135,10 @@ test('action "this" is same passed in state across runs', function (t) {
 test('registering an action generator function works', function (t) {
   var ottomaton = Ottomaton({a: 'A!'});
 
-  return ottomaton.register(function(otto) {
+  return ottomaton.register(function (otto) {
     t.strictEqual(otto, ottomaton, 'ottomaton should be passed as argument to generator');
 
-    return [Ottomaton.Action('a', function() {
+    return [Ottomaton.Action('a', function () {
       this.result = otto.opts.a;
     })];
   }).run([
@@ -151,8 +151,8 @@ test('registering an action generator function works', function (t) {
 test('supports an action generator that returns a promise', function (t) {
   var ottomaton = Ottomaton({a: 'A!'});
 
-  return ottomaton.register(function(otto) {
-    var actions = [Ottomaton.Action('a', function() {
+  return ottomaton.register(function (otto) {
+    var actions = [Ottomaton.Action('a', function () {
       this.result = otto.opts.a;
     })];
 
@@ -164,12 +164,20 @@ test('supports an action generator that returns a promise', function (t) {
   });
 });
 
-test('implicitly adds a FINISH line at end of scripts', function(t) {
+test('implicitly adds a FINISH line at end of scripts', function (t) {
   var ottomaton = Ottomaton();
 
-  ottomaton.register('FINISH', function() {
+  ottomaton.register('FINISH', function () {
     t.end();
   }).run([]);
+});
+
+test('does not add FINISH if it is already there', function (t) {
+  var ottomaton = Ottomaton();
+
+  ottomaton.register('FINISH', function () {
+    t.end();
+  }).run(['FINISH']);
 });
 
 test('cli works', function (t) {
@@ -181,7 +189,7 @@ test('cli works', function (t) {
   });
 });
 
-test('piped cli works', function(t) {
+test('piped cli works', function (t) {
   process.chdir(__dirname);
   require('child_process').exec('cat ./cli-test.txt | ../bin/otto --lib ./libraries/a.js --lib ./libraries/b', function (err, out) {
     t.error(err);

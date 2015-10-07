@@ -66,7 +66,11 @@ Ottomaton.prototype = {
         throw new LineError(unrecognizedLines);
       }
 
-      lines.push('FINISH');
+      if (!lines || !any(lines, function(line) {
+        return /^FINISH$/i.test(line);
+      })) {
+        lines.push('FINISH');
+      }
 
       return Promise.resolve(lines).then(reduce(function (state, line) {
         return performLine(actions, line);
