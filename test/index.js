@@ -38,6 +38,12 @@ test('supports registration of a single action using string', function (t) {
   });
 });
 
+test('if a matcher returns an empty array, then the arg will be the entire line', function(t) {
+  return Ottomaton().register(/^a$/, function(line) {
+    t.equal(line, 'a');
+  }).run('a');
+});
+
 test('supports registration of a single action using function', function (t) {
   return Ottomaton().register(function (line) {
     return [line];

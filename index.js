@@ -107,8 +107,9 @@ Ottomaton.prototype = {
           if (newLine) return state; // skip execution
 
           var args = action.matcher(line);
-          if (args) {
+          if (Array.isArray(args)) {
             recognized = true;
+            args = args.length ? args : [line];
             return Promise.resolve(action.handler.apply(state, args)).then(function (result) {
               if (typeof result === 'string') {
                 newLine = result;
