@@ -178,7 +178,7 @@ test('returning DONE causes any other matching actions to be skipped', function 
   }).register('a', t.fail).run('a');
 });
 
-test('supports commented lines', function (t) {
+test('supports commented lines', function () {
   return Ottomaton().register('a', function () {
   }).run([
     '# This is ignored',
