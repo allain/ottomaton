@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+var debug = require('debug')('ottomaton');
+var chalk = require('chalk');
+var Ottomaton = require('..');
+var Promise = require('native-promise-only');
+var reduce = require('promise-reduce');
+var fs = require('fs');
+var path = require('path');
+var debug = require('debug')('ottomaton');
+
+var otto = Ottomaton();
+
+var argv = require('minimist')(process.argv.slice(2));
+
+if (argv.version) {
+  return console.log(require('../package.json').version);
+}
+
+var libs = [].concat(argv.lib).filter(Boolean);
+
+var currentLib;
+var cwd = process.cwd();
+try {
+  libs.forEach(function(libPath) {
+    debug('registring library: %s', libPath);
+    currentLib = libPath;
+    libPath = path.resolve(cwd, libPath);
+
+    debug('loading from path: %s', libPath);
+    otto.register(require(libPath));
+  });
+} catch(err) {
+  debug('unable to register library "%s" reason: %j', currentLib, err);
+  console.error(chalk.red('ERROR: unable to register library "' + currentLib + '"'));
+  process.exit(1);
+}
+
+if (!argv._.length) {
+  console.error(chalk.red('ERROR: no scripts specified'));
+  process.exit(1);
+}
+
+Promise.resolve(argv._).then(reduce(function(state, srcPath) {
+  srcPath = path.resolve(cwd, srcPath);
+  if (!fs.existsSync(srcPath)) {
+    throw new Error('file could not be loaded: ' + srcPath);
+  }
+
+  return otto.run(fs.readFileSync(srcPath, 'utf-8'), state);
+}, {})).catch(function(err) {
+  debug('ERROR %j', err);
+  console.error(chalk.red('ERROR: ' + err.message));
+  process.exit(1);
+});

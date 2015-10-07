@@ -101,15 +101,15 @@ test('nothing is executed if a line does not have any actions', function (t) {
   });
 });
 
-test('actions can odify current line', function(t) {
+test('actions can odify current line', function (t) {
   return Ottomaton().register({
     'a': function () {
       return 'b';
     },
-    'b': function() {
+    'b': function () {
       this.b = 'B!';
     }
-  }).run(['a']).then(function(result) {
+  }).run(['a']).then(function (result) {
     t.equal(result.b, 'B!');
   });
 });
@@ -132,4 +132,33 @@ test('action "this" is same passed in state across runs', function (t) {
   });
 });
 
+test('cli works', function (t) {
+  process.chdir(__dirname);
+  require('child_process').exec('../bin/otto --lib ./libraries/a.js --lib ./libraries/b ./cli-test.txt', function (err, out) {
+    t.error(err);
+    t.equal(out, 'A\nB\n');
+    t.end();
+  });
+
+});
+
+test('cli missing lib failures work', function (t) {
+  process.chdir(__dirname);
+  require('child_process').exec('../bin/otto --lib ./libraries/missing.js ./cli-test.txt', function (err, out, stderr) {
+    t.ok(err);
+    t.equal(stderr, 'ERROR: unable to register library "./libraries/missing.js"\n');
+    t.end();
+  });
+});
+
+
+test('cli line errors work', function (t) {
+  process.chdir(__dirname);
+  require('child_process').exec('../bin/otto --lib ./libraries/a.js ./cli-test.txt', function (err, out, stderr) {
+    t.ok(err);
+    t.equal(stderr, 'ERROR: Line Errors:\nUnrecognized Line: #2: b\n');
+    t.equal(out, '');
+    t.end();
+  });
+});
 
