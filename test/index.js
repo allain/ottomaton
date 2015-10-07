@@ -172,10 +172,27 @@ test('implicitly adds a FINISH line at end of scripts', function (t) {
   }).run([]);
 });
 
-test('returning DONE causes any other matching actions to be skipped', function(t) {
-  return Ottomaton().register('a', function() {
+test('returning DONE causes any other matching actions to be skipped', function (t) {
+  return Ottomaton().register('a', function () {
     return 'DONE';
   }).register('a', t.fail).run('a');
+});
+
+test('supports commented lines', function (t) {
+  return Ottomaton().register('a', function () {
+  }).run([
+    '# This is ignored',
+    '#This',
+    'Rem This is ignored',
+    '  a // This portion is ignored',
+    'a'
+  ]);
+});
+
+test('supports disabling common actions', function(t) {
+  return Ottomaton({common: false}).run('# not a comment').then(t.fail, function(err) {
+    t.ok(err instanceof Error, 'expects an error');
+  });
 });
 
 test('does not add FINISH if it is already there', function (t) {

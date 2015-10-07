@@ -1,6 +1,7 @@
 var Promise = require('native-promise-only');
 var reduce = require('promise-reduce');
 var flatten = require('fj-flatten');
+var defaults = require('defaults');
 
 module.exports = Ottomaton;
 
@@ -10,7 +11,7 @@ var LineError = Ottomaton.LineError = require('./lib/line-error');
 function Ottomaton(opts) {
   if (!(this instanceof Ottomaton)) return new Ottomaton(opts);
 
-  this.opts = opts || {};
+  this.opts = defaults(opts, {common: true});
 
   this.registrations = [];
 }
@@ -45,6 +46,26 @@ Ottomaton.prototype = {
 
   run: function(lines, state) {
     state = state || {};
+
+    if (this.opts.common) {
+      this.registrations.unshift([
+        // Skip blank lines
+        Action(/^\s*$/, function() {
+          return 'DONE';
+        }),
+
+        // Ignore commented lines
+        Action(/^\s*(#|REM )/i, function() {
+          return 'DONE';
+        }),
+
+        // Ignore portion of line with // on end (like this one)
+        Action(/^(.*)\/\//, function(start) {
+          return start.trim() || 'DONE';
+        })
+      ]);
+    }
+
 
     return Promise.all(this.registrations).then(flatten).then(function(actions) {
       if (typeof lines === 'string') {
