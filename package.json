@@ -1,0 +1,30 @@
+{
+  "name": "ottomaton",
+  "version": "0.0.1",
+  "description": "A toolkit for writing automation script DSLs influenced by Cucumber.",
+  "main": "index.js",
+  "scripts": {
+    "test": "blue-tape test/*.js",
+    "lint": "eslint --fix --config .eslintrc index.js lib/*.src test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/allain/ottomaton.git"
+  },
+  "keywords": [
+    "automation",
+    "DSL"
+  ],
+  "author": "Allain Lalonde <allain.lalonde@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/allain/ottomaton/issues"
+  },
+  "homepage": "https://github.com/allain/ottomaton#readme",
+  "dependencies": {
+    "blue-tape": "^0.1.10",
+    "defaults": "^1.0.3",
+    "native-promise-only": "^0.8.1",
+    "promise-reduce": "^2.0.0"
+  }
+}
