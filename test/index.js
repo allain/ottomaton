@@ -199,6 +199,14 @@ test('supports an action generator that returns a promise', function (t) {
   });
 });
 
+test('supports registering a string as the handler', function(t) {
+  return Ottomaton().register('a', 'b').register('b', function() {
+    this.result = 'B';
+  }).run('b').then(function(result) {
+    t.equal(result.result, 'B');
+  });
+});
+
 test('implicitly adds a FINISH line at end of scripts', function (t) {
   var ottomaton = Ottomaton();
 
@@ -254,6 +262,7 @@ test('piped cli works', function (t) {
     t.end();
   });
 });
+
 
 test('cli missing lib failures work', function (t) {
   process.chdir(__dirname);

@@ -109,7 +109,18 @@ Ottomaton.prototype = {
       if (Array.isArray(args)) {
         recognized = true;
         args = args.length ? args : [line];
-        return Promise.resolve(action.handler.apply(state, args)).then(function (result) {
+        var handlerResult;
+        var handler = action.handler;
+
+        if (typeof handler === 'function') {
+          handlerResult = Promise.resolve(handler.apply(state,args));
+        } else if (typeof handler === 'string' || Array.isArray(handler)) {
+          handlerResult = Promise.resolve(handler);
+        } else {
+          throw new Error('Invalid handler: ' + handler);
+        }
+
+        return handlerResult.then(function (result) {
           if (typeof result === 'string' || Array.isArray(result)) {
             replacement = result;
           }
