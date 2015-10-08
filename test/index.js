@@ -230,14 +230,17 @@ test('returning DONE causes any other matching actions to be skipped', function 
   }).register('a', t.fail).run('a');
 });
 
-test('supports commented lines', function () {
+test('supports commented lines', function (t) {
   return Ottomaton().register('a', function () {
+    this.a = 'A';
   }).run([
     '# This is ignored',
     '#This',
     'Rem This is ignored',
     'a'
-  ]);
+  ]).then(function(result) {
+    t.equal(result.a, 'A');
+  });
 });
 
 test('supports disabling common actions', function(t) {
@@ -249,47 +252,7 @@ test('supports disabling common actions', function(t) {
 test('does not add FINISH if it is already there', function (t) {
   var ottomaton = Ottomaton();
 
-  ottomaton.register('FINISH', function () {
+  ottomaton.register('FINISH', function() {
     t.end();
   }).run(['FINISH']);
 });
-
-test('cli works', function (t) {
-  process.chdir(__dirname);
-  require('child_process').exec('../bin/otto --lib ./libraries/a.js --lib ./libraries/b ./cli-test.txt', function (err, out) {
-    t.error(err);
-    t.equal(out, 'A\nB\n');
-    t.end();
-  });
-});
-
-test('piped cli works', function (t) {
-  process.chdir(__dirname);
-  require('child_process').exec('cat ./cli-test.txt | ../bin/otto --lib ./libraries/a.js --lib ./libraries/b', function (err, out) {
-    t.error(err);
-    t.equal(out, 'A\nB\n');
-    t.end();
-  });
-});
-
-
-test('cli missing lib failures work', function (t) {
-  process.chdir(__dirname);
-
-  require('child_process').exec('../bin/otto --lib ./libraries/missing.js ./cli-test.txt', function (err, out, stderr) {
-    t.ok(err);
-    t.equal(stderr, 'ERROR: unable to register library "./libraries/missing.js"\n');
-    t.end();
-  });
-});
-
-test('cli line errors work', function (t) {
-  process.chdir(__dirname);
-  require('child_process').exec('../bin/otto --lib ./libraries/a.js ./cli-test.txt', function (err, out, stderr) {
-    t.ok(err);
-    t.equal(stderr, 'ERROR: Line Errors:\nUnrecognized Line: #2: b\n');
-    t.equal(out, '');
-    t.end();
-  });
-});
-
