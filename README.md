@@ -18,10 +18,14 @@ npm install -g ottomaton
 
 ```bash
 # run a script file
-otto --lib libs/a.js --lib libs/b script.txt
+otto ./libs/a.js ./libs/b script.txt
+
+# run script and pass in params as properties of state available to actions
+cat print message | otto --message "Hello World" ./libs/print-param.js
 
 # run the piped script
-cat script.txt | otto --lib libs/a.js --lib libs/b
+cat script.txt | otto libs/a.js libs/b
+
 ```
 
 ## Example Usage
