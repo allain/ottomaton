@@ -115,7 +115,7 @@ test('nothing is executed if a line does not have any actions', function (t) {
   });
 });
 
-test('actions can odify current line', function (t) {
+test('handlers can rewrite current line by returning its mutation', function (t) {
   return Ottomaton().register({
     'a': function () {
       return 'b';
@@ -128,7 +128,28 @@ test('actions can odify current line', function (t) {
   });
 });
 
-test('action "this" is same passed in state across runs', function (t) {
+test('actions can expand current line into a script', function (t) {
+  return Ottomaton().register({
+    'a': function () {
+      this.result += 'A'; 
+    },
+    'b': function () {
+      this.result += 'B';
+    },
+    'c': function() {
+      // suports array
+      return ['a', 'b'];
+    },
+    'd': function() {
+      // supports string
+      return 'a\nb';
+    }
+  }).run(['c', 'd'], {result: ''}).then(function (result) {
+    t.equal(result.result, 'ABAB');
+  });
+});
+
+test('handler "this" is same passed in state across runs', function (t) {
   var state = {handled: 0};
 
   return Ottomaton().register({

@@ -14,6 +14,7 @@ function Ottomaton(opts) {
   this.opts = defaults(opts, {common: true});
 
   this.registrations = [];
+  this._actions = null;
 }
 
 Ottomaton.prototype = {
@@ -49,28 +50,12 @@ Ottomaton.prototype = {
   },
 
   run: function(lines, state) {
+    if (typeof lines === 'string') {
+      lines = lines.split(/[\r\n]+/g);
+    }
     state = state || {};
 
-    if (this.opts.common) {
-      this.registrations.unshift([
-        // Skip blank lines
-        Action(/^\s*$/, function() {
-          return 'DONE';
-        }),
-
-        // Ignore commented lines
-        Action(/^\s*(#|REM )/i, function() {
-          return 'DONE';
-        })
-      ]);
-    }
-
-
-    return Promise.all(this.registrations.map(expandAction)).then(flatten).then(function(actions) {
-      if (typeof lines === 'string') {
-        lines = lines.split(/[\r\n]+/g);
-      }
-
+    return this._buildActions().then(function(actions) {
       var unrecognizedLines = lines.map(function (line, index) {
         if (line === 'FINISH') return false;
 
@@ -88,7 +73,7 @@ Ottomaton.prototype = {
       }).filter(Boolean);
 
       if (unrecognizedLines.length) {
-        throw new LineError(unrecognizedLines);
+        return Promise.reject(new LineError(unrecognizedLines));
       }
 
       if (!lines || !any(lines, function(line) {
@@ -97,44 +82,80 @@ Ottomaton.prototype = {
         lines.push('FINISH');
       }
 
-      return Promise.resolve(lines).then(reduce(function (state, line) {
-        return performLine(actions, line);
-      }, state));
+      return this._execute(lines, state);
+    }.bind(this));
+  },
+  
+  _execute: function(lines, state) {
+    state = state || {};
 
-      function performLine(actions, line) {
-        var recognized;
-        var newLine;
+    if (typeof lines === 'string') {
+      lines = lines.split(/[\r\n]+/g);
+    }
 
-        return Promise.resolve(actions).then(reduce(function (state, action) {
-          if (newLine) return state; // skip execution
+    return Promise.resolve(lines).then(reduce(function (state, line) {
+      return this._executeLine(line, state);
+    }.bind(this), state));
+  },
 
-          var args = action.matcher(line);
-          if (Array.isArray(args)) {
-            recognized = true;
-            args = args.length ? args : [line];
-            if (typeof action.handler !== 'function') {
-              throw action.handler;
-            }
-            return Promise.resolve(action.handler.apply(state, args)).then(function (result) {
-              if (typeof result === 'string') {
-                newLine = result;
-              }
-              return state;
-            });
+  _executeLine: function(line, state) {
+    var recognized = false;
+    var replacement = null;
+
+    return Promise.resolve(this._actions).then(reduce(function (state, action) {
+      if (replacement !== null) return state; // skip execution
+
+      var args = action.matcher(line);
+      if (Array.isArray(args)) {
+        recognized = true;
+        args = args.length ? args : [line];
+        return Promise.resolve(action.handler.apply(state, args)).then(function (result) {
+          if (typeof result === 'string' || Array.isArray(result)) {
+            replacement = result;
           }
-
-          return state;
-        }, state)).then(function (state) {
-          if (!line.match(/^FINISH|DONE$/i) && !recognized) {
-            throw new LineError('Unrecognized Line: ' + line);
-          }
-
-          if (newLine && !newLine.match(/^FINISH|DONE$/)) return performLine(actions, newLine);
 
           return state;
         });
       }
-    });
+
+      return state;
+    }, state)).then(function (state) {
+      if (!line.match(/^FINISH|DONE$/i) && !recognized) {
+        throw new LineError('Unrecognized Line: ' + line);
+      }
+
+      if (typeof replacement === 'string' && !replacement.match(/^FINISH|DONE$/)) {
+        return this._execute(replacement, state);
+      } else if (Array.isArray(replacement)) {
+        return this._execute(replacement, state);
+      }
+
+      return state;
+    }.bind(this));
+  },
+
+  _buildActions: function() {
+    if (this._actions) return Promise.resolve(this._actions);
+
+    if (this.opts.common) {
+      // Prepend built-in actions
+      this.registrations.unshift([
+        // Skip blank lines
+        Action(/^\s*$/, function() {
+          return 'DONE';
+        }),
+
+        // Ignore commented lines
+        Action(/^\s*(#|REM )/i, function() {
+          return 'DONE';
+        })
+      ]);
+    }
+
+    return Promise.all(this.registrations.map(expandAction)).then(flatten).then(function(actions) {
+      this._actions = actions;
+      return actions;
+    }.bind(this));
   }
 };
 
