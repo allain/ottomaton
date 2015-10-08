@@ -143,7 +143,9 @@ function expandAction(action) {
     return action.then(expandAction);
   }
 
-  if (Array.isArray(action.matcher)) {
+  if (Array.isArray(action)) {
+    return action.map(expandAction);
+  } else if (Array.isArray(action.matcher)) {
     return action.matcher.map(function(m) {
       return Action(m, action.handler); // In case it returns a promise
     });
