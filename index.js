@@ -20,27 +20,19 @@ Ottomaton.prototype = {
   // Queue up actions or Promises which resolve to actions or array of actions for later registration
   register: function(matcher, handler) {
     if (handler) {
-      if (Array.isArray(matcher)) {
-        matcher.forEach(function(m) {
-          this.register(m, handler);
-        }.bind(this));
-      } else {
-        this.registrations.push(Action(matcher, handler));
-      }
-    } else if (matcher && typeof matcher.then === 'function') {
+      this.registrations.push(Action(matcher, handler));
+      return this;
+    } 
+    
+    // Single param registrations
+    if (matcher && typeof matcher.then === 'function') {
       this.registrations.push(matcher);
     } else if (typeof matcher === 'function') {
       this.registrations.push(matcher(this));
     } else if (matcher instanceof Action) {
-      if (Array.isArray(matcher.matcher)) {
-        matcher.matcher.forEach(function(m) {
-          this.register(m, matcher.handler); 
-        }.bind(this));
-      } else {
-        this.registrations.push(matcher);
-      }
+      this.registrations.push(matcher);
     } else if (Array.isArray(matcher)) {
-      matcher.forEach(this.register.bind(this));
+      this.registrations.push(matcher);
     } else if (typeof matcher === 'object') {
       if (matcher.handler && matcher.matcher) {
         this.registrations.push(Action(matcher.matcher, matcher.handler));
@@ -74,7 +66,7 @@ Ottomaton.prototype = {
     }
 
 
-    return Promise.all(this.registrations).then(flatten).then(function(actions) {
+    return Promise.all(this.registrations.map(expandAction)).then(flatten).then(function(actions) {
       if (typeof lines === 'string') {
         lines = lines.split(/[\r\n]+/g);
       }
@@ -120,6 +112,9 @@ Ottomaton.prototype = {
           if (Array.isArray(args)) {
             recognized = true;
             args = args.length ? args : [line];
+            if (typeof action.handler !== 'function') {
+              throw action.handler;
+            }
             return Promise.resolve(action.handler.apply(state, args)).then(function (result) {
               if (typeof result === 'string') {
                 newLine = result;
@@ -142,6 +137,20 @@ Ottomaton.prototype = {
     });
   }
 };
+
+function expandAction(action) {
+  if (typeof action.then === 'function') {
+    return action.then(expandAction);
+  }
+
+  if (Array.isArray(action.matcher)) {
+    return action.matcher.map(function(m) {
+      return Action(m, action.handler); // In case it returns a promise
+    });
+  } else {
+    return action;
+  }
+}
 
 function any(array, predicate) {
   for (var i=0; i < array.length; i++) {
