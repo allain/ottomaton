@@ -207,6 +207,15 @@ test('supports registering a string as the handler', function(t) {
   });
 });
 
+test('supports registering an array handler', function(t) {
+  return Ottomaton().register('a', ['b']).register('b', function() {
+    this.result = 'B';
+  }).run('b').then(function(result) {
+    t.equal(result.result, 'B');
+  });
+});
+
+
 test('implicitly adds a FINISH line at end of scripts', function (t) {
   var ottomaton = Ottomaton();
 
