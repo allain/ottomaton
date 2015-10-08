@@ -21,7 +21,7 @@ npm install -g ottomaton
 otto ./libs/a.js ./libs/b script.txt
 
 # run script and pass in params as properties of state available to actions
-cat print message | otto --message "Hello World" ./libs/print-param.js
+cat print MESSAGE | otto --MESSAGE "Hello World" ./libs/print-param.js
 
 # run the piped script
 cat script.txt | otto libs/a.js libs/b

@@ -57,7 +57,7 @@ Ottomaton.prototype = {
 
     return this._buildActions().then(function(actions) {
       var unrecognizedLines = lines.map(function (line, index) {
-        if (line === 'FINISH') return false;
+        if (line === Action.FINISH) return false;
 
         if (any(actions, function(action) {
           if (typeof action.matcher !== 'function') {
@@ -77,9 +77,9 @@ Ottomaton.prototype = {
       }
 
       if (!lines || !any(lines, function(line) {
-        return /^FINISH$/i.test(line);
+        return line === Action.FINISH;
       })) {
-        lines.push('FINISH');
+        lines.push(Action.FINISH);
       }
 
       return this._execute(lines, state);
@@ -108,12 +108,12 @@ Ottomaton.prototype = {
       var args = action.matcher(line);
       if (Array.isArray(args)) {
         recognized = true;
-        args = args.length ? args : [line];
+        args = args.length ? this._deref(state, args) : [line];
         var handlerResult;
         var handler = action.handler;
 
         if (typeof handler === 'function') {
-          handlerResult = Promise.resolve(handler.apply(state,args));
+          handlerResult = Promise.resolve(handler.apply(state, args));
         } else if (typeof handler === 'string' || Array.isArray(handler)) {
           handlerResult = Promise.resolve(handler);
         } else {
@@ -130,12 +130,12 @@ Ottomaton.prototype = {
       }
 
       return state;
-    }, state)).then(function (state) {
-      if (!line.match(/^FINISH|DONE$/i) && !recognized) {
+    }.bind(this), state)).then(function (state) {
+      if ([Action.DONE, Action.FINISH].indexOf(line) === -1 && !recognized) {
         throw new LineError('Unrecognized Line: ' + line);
       }
 
-      if (typeof replacement === 'string' && !replacement.match(/^FINISH|DONE$/)) {
+      if (typeof replacement === 'string' && [Action.DONE, Action.FINISH].indexOf(replacement) === -1) {
         return this._execute(replacement, state);
       } else if (Array.isArray(replacement)) {
         return this._execute(replacement, state);
@@ -143,6 +143,27 @@ Ottomaton.prototype = {
 
       return state;
     }.bind(this));
+  },
+
+  _deref: function(state, refs) {
+    return refs.map(function(ref) {
+      var match = /^"(.+)"$/g.exec(ref);
+      if (match) {
+        return match[1];
+      }
+
+      match = /^([A-Z][A-Z0-9]*_)*[A-Z0-9]+$/g.exec(ref);
+      if (!match) {
+        return ref;
+      }
+
+      var val = state[ref];
+      if (val === undefined) {
+        throw new Error('Unknown Reference: ' + ref);
+      }
+
+      return val;
+    });
   },
 
   _buildActions: function() {
@@ -153,12 +174,12 @@ Ottomaton.prototype = {
       this.registrations.unshift([
         // Skip blank lines
         Action(/^\s*$/, function() {
-          return 'DONE';
+          return Action.DONE;
         }),
 
         // Ignore commented lines
         Action(/^\s*(#|REM )/i, function() {
-          return 'DONE';
+          return Action.DONE;
         })
       ]);
     }
