@@ -8,8 +8,7 @@
   },
   "scripts": {
     "test": "blue-tape test/*.js",
-    "lint": "eslint --fix --config .eslintrc index.js bin/* lib/*.src test/*.js test/*/libraries/*.js",
-    "prepublish": "npm run test && npm run lint"
+    "lint": "eslint --fix --config .eslintrc index.js bin/* lib/*.src test/*.js test/*/libraries/*.js"
   },
   "repository": {
     "type": "git",
