@@ -198,16 +198,16 @@ Ottomaton.prototype = {
 function expandAction(action) {
   if (typeof action.then === 'function') {
     return action.then(expandAction);
-  }
-
-  if (Array.isArray(action)) {
+  } else if (Array.isArray(action)) {
     return action.map(expandAction);
   } else if (Array.isArray(action.matcher)) {
     return action.matcher.map(function(m) {
       return Action(m, action.handler); // In case it returns a promise
     });
-  } else {
+  } else if (action instanceof Action) {
     return action;
+  } else if (action.matcher && action.handler) {
+    return Action(action.matcher, action.handler);
   }
 }
 
