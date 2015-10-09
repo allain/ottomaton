@@ -1,14 +1,7 @@
 var test = require('blue-tape');
 
-var ducktype = require('ducktype');
-
 var Ottomaton = require('../lib/index');
 var Action = Ottomaton.Action;
-
-var OttomatonType = ducktype({
-  run: Function,
-  register: Function
-});
 
 test('can be created using constructor', function (t) {
   var opts = {};

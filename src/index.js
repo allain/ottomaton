@@ -1,21 +1,10 @@
 import Promise from 'native-promise-only';
 import reduce from 'promise-reduce';
 import flatten from 'fj-flatten';
-import defaults from  'defaults';
+import defaults from 'defaults';
+import factory from 'simple-factory';
 
-const debug = require('debug')('ottomaton');
-
-export default Ottomaton;
-
-const Action = Ottomaton.Action = require('./action');
-const LineError = Ottomaton.LineError = require('./line-error');
-
-// To support factory pattern
-function Ottomaton(opts) {
-  return new OttomatonClass(opts);
-}
-
-class OttomatonClass {
+class Ottomaton {
   constructor(opts) {
     this.opts = defaults(opts, {common: true});
     this.registrations = [];
@@ -33,7 +22,7 @@ class OttomatonClass {
       this.registrations.push(matcher);
     } else if (typeof matcher === 'function') {
       this.registrations.push(matcher(this));
-    } else if (matcher instanceof Action) {
+    } else if (matcher instanceof Action.Impl) {
       this.registrations.push(matcher);
     } else if (Array.isArray(matcher)) {
       this.registrations.push(matcher);
@@ -136,6 +125,7 @@ class OttomatonClass {
         Action.DONE,
         Action.FINISH
       ].indexOf(replacement) !== -1) {
+        // Skip further processing
       } else if (typeof replacement === 'string') {
         return this._execute(replacement.split(/[\r\n]+/g), state);
       } else if (Array.isArray(replacement)) {
@@ -188,6 +178,10 @@ class OttomatonClass {
   }
 }
 
+const Action = Ottomaton.Action = require('./action');
+const LineError = Ottomaton.LineError = require('./line-error');
+
+
 function expandAction(action) {
   if (typeof action.then === 'function') {
     return action.then(expandAction);
@@ -204,7 +198,7 @@ function expandAction(action) {
       return line === Action.DONE ? [] : null;
     };
   }
-  if (!action instanceof Action) {
+  if (!action instanceof Action.Impl) {
     action = Action(action.matcher, action.handler);
   }
   return action;
@@ -216,3 +210,5 @@ function any(array, predicate) {
   }
   return false;
 }
+
+export default factory(Ottomaton);

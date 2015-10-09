@@ -1,22 +1,27 @@
-function OttomatonAction(matcher, handler) {
-    if (!(this instanceof OttomatonAction))
-        return new OttomatonAction(matcher, handler);
+import factory from 'simple-factory';
+
+class OttomatonAction {
+  constructor(matcher, handler) {
     const m = normalizeMatcher(matcher);
     if (!m)
-        throw new Error(`Invalid matcher: ${ matcher }`);
+      throw new Error(`Invalid matcher: ${ matcher }`);
     this.matcher = m;
     this.handler = handler;
+  }
 }
 
-OttomatonAction.FINISH = function () {
-    return FINISH;
+
+OttomatonAction.Impl = OttomatonAction;
+
+OttomatonAction.FINISH = function FINISH() {
+  return FINISH;
 };
 
 OttomatonAction.DONE = function DONE() {
-    return DONE;
+  return DONE;
 };
 
-export default OttomatonAction;
+export default factory(OttomatonAction);
 
 function normalizeMatcher(matcher) {
     let m;

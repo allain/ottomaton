@@ -7,15 +7,16 @@
     "otto": "./lib/bin/otto.js"
   },
   "scripts": {
-    "compile": "babel -d lib/ src/ && chmod +x lib/bin/otto.js",
+    "compile": "babel --source-maps true -d lib/ src/ && chmod +x lib/bin/otto.js",
+    "clean": "rm -r lib",
     "pretest": "npm run compile",
     "test": "blue-tape test/*.js",
-    "lint": "eslint --fix --config .eslintrc index.js bin/* lib/*.src test/*.js test/*/libraries/*.js",
-    "prepublish": "npm run lint && npm run test"
+    "lint": "eslint --fix --config .eslintrc src/index.js src/bin/* test/*.js test/*/libraries/*.js",
+    "prepublish": "npm run clean && npm run lint && npm run test"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/allain/ottomaton"
+    "url": "https://github.com/bmullan91/simple-factory"
   },
   "keywords": [
     "automation",
@@ -34,7 +35,8 @@
     "fj-flatten": "^1.0.0",
     "minimist": "^1.2.0",
     "native-promise-only": "^0.8.1",
-    "promise-reduce": "^2.0.0"
+    "promise-reduce": "^2.0.0",
+    "simple-factory": "allain/simple-factory"
   },
   "devDependencies": {
     "babel": "^5.8.23",
