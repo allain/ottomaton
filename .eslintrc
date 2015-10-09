@@ -18,7 +18,12 @@
     ],
     "no-console": [
       0
-    ]
+    ],
+    "no-multiple-empty-lines": [
+      2,
+      {"max": 2}
+    ],
+    "strict": 0
   },
   "ecmaFeatures": {"modules": true},
   "env": {

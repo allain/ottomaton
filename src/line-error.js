@@ -2,7 +2,9 @@ import util from 'util';
 
 class OttomatonLineError extends Error {
   constructor(lines) {
-    let message = `Line Errors:\n${ lines.join('\n') }`;
+  	lines = [].concat(lines);
+
+  	let message = `Line Errors:\n${ lines.join('\n') }`;
     super(message);
 
     this.lines = Array.isArray(lines) ? lines : [lines];

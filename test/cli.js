@@ -27,7 +27,6 @@ test('cli - piping works', function (t) {
   });
 });
 
-
 test('cli - missing lib failures work', function (t) {
   process.chdir(__dirname);
 

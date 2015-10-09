@@ -149,9 +149,11 @@ test('core - supports commented lines', function (t) {
 test('core - actions can see Ottomaton through this', function(t) {
   var otto =  Ottomaton();
 
-  return otto.register('a', function() {
+  otto.register('a', function() {
     t.equal(otto, this.ottomaton);
-  }).run('a');
+  }).register(Action.FINISH, function() {
+    t.end();
+  }).run('a').catch(t.fail);
 });
 
 test('core - run returns state without ottomaton in it', function(t) {
@@ -166,10 +168,12 @@ test('core - supports disabling common actions', function (t) {
   });
 });
 
-test('core - does not add FINISH if it is already there', function (t) {
+test('core - lines after FINISH are ignored', function (t) {
   Ottomaton().register(Action.FINISH, function () {
     t.end();
-  }).run([Action.FINISH]);
+  }).register('a', function() {
+    t.fail('should not get executed');
+  }).run([Action.FINISH, 'a', Action.FINISH]);
 });
 
 test('core - ALL_CAPS get treated as reference to props in the state', function (t) {
