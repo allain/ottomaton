@@ -7,10 +7,10 @@
     "otto": "./lib/bin/otto.js"
   },
   "scripts": {
-    "compile": "babel --source-maps true -d lib/ src/ && chmod +x lib/bin/otto.js",
+    "compile": "babel --stage 2 --optional runtime --source-maps true -d lib/ src/ && chmod +x lib/bin/otto.js",
     "clean": "rm -r lib",
     "pretest": "npm run compile",
-    "test": "blue-tape test/*.js",
+    "test": "blue-tape test/*.js | faucet",
     "lint": "eslint --fix --config .eslintrc src/index.js src/bin/* test/*.js test/*/libraries/*.js",
     "prepublish": "npm run clean && npm run lint && npm run test"
   },
@@ -29,10 +29,12 @@
   },
   "homepage": "https://github.com/allain/ottomaton#readme",
   "dependencies": {
+    "babel-runtime": "^5.8.25",
     "chalk": "^1.1.1",
     "debug": "^2.2.0",
     "defaults": "^1.0.3",
     "fj-flatten": "^1.0.0",
+    "map-in": "^1.0.2",
     "minimist": "^1.2.0",
     "native-promise-only": "^0.8.1",
     "promise-reduce": "^2.0.0",
@@ -41,6 +43,7 @@
   "devDependencies": {
     "babel": "^5.8.23",
     "blue-tape": "^0.1.10",
-    "ducktype": "^1.1.0"
+    "ducktype": "^1.1.0",
+    "faucet": "0.0.1"
   }
 }

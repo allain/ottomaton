@@ -3,6 +3,9 @@ import reduce from 'promise-reduce';
 import flatten from 'fj-flatten';
 import defaults from 'defaults';
 import factory from 'simple-factory';
+import mapIn from 'map-in';
+
+const debug = require('debug')('ottomaton');
 
 class Ottomaton {
   constructor(opts) {
@@ -54,21 +57,16 @@ class Ottomaton {
     state.ottomaton = this;
 
     return this._buildActions().then(actions => {
-      const unrecognizedLines = lines.map((line, index) => {
-        if (line === Action.FINISH)
-          return false;
+      const unrecognizedLines = Object.values(mapIn(lines, (line, index) => {
+        if (!actions.find(action => action.matcher(line)))
+          return `Unrecognized Line: #${ index + 1 }: ${ line }`;
+      }).filter(Boolean));
 
-        return actions.find(action => {
-          if (typeof action.matcher !== 'function') {
-            throw new Error(`invalid matcher: ${ action.matcher }`);
-          }
-
-          return action.matcher(line);
-        }) ? false : `Unrecognized Line: #${ index + 1 }: ${ line }`;
-      }).filter(Boolean);
       if (unrecognizedLines.length) {
+        debug('unrecognized lines: %j', unrecognizedLines);
         return Promise.reject(new LineError(unrecognizedLines));
       }
+
       if (!lines || !any(lines, line => {
         return line === Action.FINISH;
       })) {
@@ -88,51 +86,61 @@ class Ottomaton {
   }
 
   _executeLine(line, state) {
+    const self = this;
     let recognized = false;
     let replacement = null;
     state.LINE = line;
-    return Promise.resolve(this._actions).then(reduce(function (state, action) {
-      if (replacement !== null)
-        return state;
-      // skip execution
-      let args = action.matcher(line);
-      if (Array.isArray(args)) {
+        
+    return this._buildActions().then(async function(actions) {
+      debug('executing line %s against %d actions', line, actions.length); 
+      for (const action of actions) {
+        let args = await Promise.resolve(action.matcher(line));
+        if (!Array.isArray(args))
+          continue;
+
         recognized = true;
-        args = args.length ? this._deref(state, args) : [line];
+
+        args = args.length ? self._deref(state, args) : [line];
+
         let handlerResult;
         const handler = action.handler;
         if (typeof handler === 'function') {
-          handlerResult = Promise.resolve(handler.apply(state, args));
+          handlerResult = handler.apply(state, args);
         } else if (typeof handler === 'string' || Array.isArray(handler)) {
-          handlerResult = Promise.resolve(handler);
+          handlerResult = handler;
         } else {
           throw new Error(`Invalid handler: ${ handler }`);
         }
-        return handlerResult.then(result => {
+
+        var result = await Promise.resolve(handlerResult);
+        debug('handler resulted in %j', result);
+        if (result) {
           replacement = result;
-          return state;
-        });
+          break;
+        }
       }
-      return state;
-    }.bind(this), state)).then(function (state) {
+    }).then(()=> {
       if ([
         Action.DONE,
         Action.FINISH
       ].indexOf(line) === -1 && !recognized) {
-        throw new LineError(`Unrecognized Line: ${ line }`);
+        throw new LineError([line]);
       }
-      if ([
-        Action.DONE,
-        Action.FINISH
-      ].indexOf(replacement) !== -1) {
-        // Skip further processing
-      } else if (typeof replacement === 'string') {
+       
+      if (replacement === undefined) {
+        return state;
+      }
+ 
+      if (typeof replacement === 'string') {
         return this._execute(replacement.split(/[\r\n]+/g), state);
-      } else if (Array.isArray(replacement)) {
+      }
+      
+      if (Array.isArray(replacement)) {
         return this._execute(replacement, state);
       }
+ 
       return state;
-    }.bind(this)).then(result => {
+    }).then(result => {
       delete result.LINE;
       return result;
     }, err => {
@@ -144,17 +152,17 @@ class Ottomaton {
   _deref(state, refs) {
     return refs.map(ref => {
       let match = /^"(.+)"$/g.exec(ref);
-      if (match) {
+      if (match) 
         return match[1];
-      }
+      
       match = /^([A-Z][A-Z0-9]*_)*[A-Z0-9]+$/g.exec(ref);
-      if (!match) {
+      if (!match) 
         return ref;
-      }
+      
       const val = state[ref];
-      if (val === undefined) {
+      if (val === undefined) 
         throw new Error(`Unknown Reference: ${ ref }`);
-      }
+
       return val;
     });
   }
@@ -162,19 +170,22 @@ class Ottomaton {
   _buildActions() {
     if (this._actions)
       return Promise.resolve(this._actions);
+
     if (this.opts.common) {
       // Prepend built-in actions
       this.registrations.unshift([
         // Skip blank lines
         Action(/^\s*$/, Action.DONE),
+
         // Ignore commented lines
         Action(/^\s*(#|REM )/i, Action.DONE)
       ]);
     }
-    return Promise.all(this.registrations.map(expandAction)).then(flatten).then(function (actions) {
+
+    return Promise.all(this.registrations.map(expandAction)).then(flatten).then(actions => {
       this._actions = actions;
       return actions;
-    }.bind(this));
+    });
   }
 }
 

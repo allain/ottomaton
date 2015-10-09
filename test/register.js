@@ -3,7 +3,7 @@ var test = require('blue-tape');
 var Ottomaton = require('../lib/index');
 var Action = Ottomaton.Action;
 
-test('supports registration of a single action using regex', function (t) {
+test('register - supports registration of a single action using regex', function (t) {
   return Ottomaton().register(/^test (.*)$/, function (name) {
     this.test = name;
   }).run(['test Allain Lalonde']).then(function (result) {
@@ -11,7 +11,7 @@ test('supports registration of a single action using regex', function (t) {
   });
 });
 
-test('supports registration of an array of matchers for a single handler', function (t) {
+test('register - supports registration of an array of matchers for a single handler', function (t) {
   return Ottomaton().register([/^(a)$/, /^(b)$/], function (line) {
     this.result += line;
   }).run(['a', 'b'], {result: ''}).then(function (result) {
@@ -19,7 +19,7 @@ test('supports registration of an array of matchers for a single handler', funct
   });
 });
 
-test('supports registration of a single action using string', function (t) {
+test('register - supports registration of a single action using string', function (t) {
   return Ottomaton().register('test "NAME"', function (name) {
     this.test = name;
   }).run(['test Allain']).then(function (result) {
@@ -27,7 +27,7 @@ test('supports registration of a single action using string', function (t) {
   });
 });
 
-test('supports registration of a single action using function', function (t) {
+test('register - supports registration of a single action using function', function (t) {
   return Ottomaton().register(function (line) {
     return [line];
   }, function (l) {
@@ -37,7 +37,7 @@ test('supports registration of a single action using function', function (t) {
   });
 });
 
-test('supports registration of a single action', function (t) {
+test('register - supports registration of a single action', function (t) {
   return Ottomaton().register(new Ottomaton.Action(function (line) {
     return [line];
   }, function (l) {
@@ -47,7 +47,7 @@ test('supports registration of a single action', function (t) {
   });
 });
 
-test('supports registration of actions array', function (t) {
+test('register - supports registration of actions array', function (t) {
   var otto = new Ottomaton();
   otto.register([{
     matcher: /^test$/, handler: function () {
@@ -59,7 +59,7 @@ test('supports registration of actions array', function (t) {
   t.end();
 });
 
-test('supports registration of hash', function (t) {
+test('register - supports registration of hash', function (t) {
   var otto = new Ottomaton();
   otto.register({
     'test': function () {
@@ -70,7 +70,7 @@ test('supports registration of hash', function (t) {
   t.end();
 });
 
-test('supports registration of an action generator', function (t) {
+test('register - supports registration of an action generator', function (t) {
   var ottomaton = Ottomaton({a: 'A!'});
 
   return ottomaton.register(function (otto) {
@@ -86,7 +86,7 @@ test('supports registration of an action generator', function (t) {
   });
 });
 
-test('supports registration of an action generator that returns a promise', function (t) {
+test('register - supports registration of an action generator that returns a promise', function (t) {
   var ottomaton = Ottomaton({a: 'A!'});
 
   return ottomaton.register(function (otto) {
@@ -102,7 +102,7 @@ test('supports registration of an action generator that returns a promise', func
   });
 });
 
-test('supports registration of a string as the handler', function(t) {
+test('register - supports registration of a string as the handler', function(t) {
   return Ottomaton().register('a', 'b').register('b', function() {
     this.result = 'B';
   }).run('b').then(function(result) {
@@ -110,7 +110,7 @@ test('supports registration of a string as the handler', function(t) {
   });
 });
 
-test('supports registration of an array as the handler', function(t) {
+test('register - supports registration of an array as the handler', function(t) {
   return Ottomaton().register('a', ['b']).register('b', function() {
     this.result = 'B';
   }).run('b').then(function(result) {
