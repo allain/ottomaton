@@ -19,12 +19,12 @@ function Ottomaton(opts) {
 
 Ottomaton.prototype = {
   // Queue up actions or Promises which resolve to actions or array of actions for later registration
-  register: function(matcher, handler) {
+  register: function (matcher, handler) {
     if (handler) {
       this.registrations.push(Action(matcher, handler));
       return this;
-    } 
-    
+    }
+
     // Single param registrations
     if (matcher && typeof matcher.then === 'function') {
       this.registrations.push(matcher);
@@ -38,7 +38,7 @@ Ottomaton.prototype = {
       if (matcher.handler && matcher.matcher) {
         this.registrations.push(Action(matcher.matcher, matcher.handler));
       } else {
-        Object.keys(matcher).forEach(function(m) {
+        Object.keys(matcher).forEach(function (m) {
           this.register(m, matcher[m]);
         }.bind(this));
       }
@@ -49,18 +49,18 @@ Ottomaton.prototype = {
     return this;
   },
 
-  run: function(lines, state) {
+  run: function (lines, state) {
     if (typeof lines === 'string') {
       lines = lines.split(/[\r\n]+/g);
     }
     state = state || {};
     state.ottomaton = this;
 
-    return this._buildActions().then(function(actions) {
+    return this._buildActions().then(function (actions) {
       var unrecognizedLines = lines.map(function (line, index) {
         if (line === Action.FINISH) return false;
 
-        if (any(actions, function(action) {
+        if (any(actions, function (action) {
           if (typeof action.matcher !== 'function') {
             throw new Error('invalid matcher: ' + action.matcher);
           }
@@ -77,20 +77,20 @@ Ottomaton.prototype = {
         return Promise.reject(new LineError(unrecognizedLines));
       }
 
-      if (!lines || !any(lines, function(line) {
+      if (!lines || !any(lines, function (line) {
         return line === Action.FINISH;
       })) {
         lines.push(Action.FINISH);
       }
 
       return this._execute(lines, state);
-    }.bind(this)).then(function(result) {
+    }.bind(this)).then(function (result) {
       delete result.ottomaton;
       return result;
     });
   },
-  
-  _execute: function(lines, state) {
+
+  _execute: function (lines, state) {
     state = state || {};
 
     if (typeof lines === 'string') {
@@ -102,9 +102,11 @@ Ottomaton.prototype = {
     }.bind(this), state));
   },
 
-  _executeLine: function(line, state) {
+  _executeLine: function (line, state) {
     var recognized = false;
     var replacement = null;
+
+    state.LINE = line;
 
     return Promise.resolve(this._actions).then(reduce(function (state, action) {
       if (replacement !== null) return state; // skip execution
@@ -146,11 +148,17 @@ Ottomaton.prototype = {
       }
 
       return state;
-    }.bind(this));
+    }.bind(this)).then(function (result) {
+      delete result.LINE;
+      return result;
+    }, function (err) {
+      delete state.LINE;
+      throw err;
+    });
   },
 
-  _deref: function(state, refs) {
-    return refs.map(function(ref) {
+  _deref: function (state, refs) {
+    return refs.map(function (ref) {
       var match = /^"(.+)"$/g.exec(ref);
       if (match) {
         return match[1];
@@ -170,25 +178,25 @@ Ottomaton.prototype = {
     });
   },
 
-  _buildActions: function() {
+  _buildActions: function () {
     if (this._actions) return Promise.resolve(this._actions);
 
     if (this.opts.common) {
       // Prepend built-in actions
       this.registrations.unshift([
         // Skip blank lines
-        Action(/^\s*$/, function() {
+        Action(/^\s*$/, function () {
           return Action.DONE;
         }),
 
         // Ignore commented lines
-        Action(/^\s*(#|REM )/i, function() {
+        Action(/^\s*(#|REM )/i, function () {
           return Action.DONE;
         })
       ]);
     }
 
-    return Promise.all(this.registrations.map(expandAction)).then(flatten).then(function(actions) {
+    return Promise.all(this.registrations.map(expandAction)).then(flatten).then(function (actions) {
       this._actions = actions;
       return actions;
     }.bind(this));
@@ -201,7 +209,7 @@ function expandAction(action) {
   } else if (Array.isArray(action)) {
     return action.map(expandAction);
   } else if (Array.isArray(action.matcher)) {
-    return action.matcher.map(function(m) {
+    return action.matcher.map(function (m) {
       return Action(m, action.handler); // In case it returns a promise
     });
   } else if (action instanceof Action) {
@@ -212,7 +220,7 @@ function expandAction(action) {
 }
 
 function any(array, predicate) {
-  for (var i=0; i < array.length; i++) {
+  for (var i = 0; i < array.length; i++) {
     if (predicate(array[i])) return true;
   }
   return false;

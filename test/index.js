@@ -38,6 +38,15 @@ test('invokes matching actions when run', function (t) {
   });
 });
 
+test('passes current line into handler as this.LINE', function(t) {
+  return Ottomaton().register(/^Hello (.*)$/i, function(value) {
+    t.equal(value, 'World!');
+    t.equal(this.LINE, 'Hello World!');
+  }).run('Hello World!').then(function(result) {
+    t.equal(result.LINE, undefined);
+  });
+});
+
 test('nothing is executed if a line does not have any actions', function (t) {
   return Ottomaton().register({
     'a': function () {
