@@ -1,6 +1,6 @@
 var test = require('blue-tape');
 
-var Ottomaton = require('..');
+var Ottomaton = require('../lib/index');
 var Action = Ottomaton.Action;
 
 test('supports registration of a single action using regex', function (t) {

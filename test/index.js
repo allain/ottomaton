@@ -1,6 +1,6 @@
 var test = require('blue-tape');
 
-var Ottomaton = require('..');
+var Ottomaton = require('../lib/index');
 var Action = Ottomaton.Action;
 
 test('can be created using constructor', function (t) {

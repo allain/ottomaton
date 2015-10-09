@@ -1,4 +1,4 @@
-var Promise = require('native-promise-only');
+import Promise from 'native-promise-only';
 var reduce = require('promise-reduce');
 var flatten = require('fj-flatten');
 var defaults = require('defaults');
@@ -7,8 +7,8 @@ var debug = require('debug')('ottomaton');
 
 module.exports = Ottomaton;
 
-var Action = Ottomaton.Action = require('./lib/action');
-var LineError = Ottomaton.LineError = require('./lib/line-error');
+var Action = Ottomaton.Action = require('./action');
+var LineError = Ottomaton.LineError = require('./line-error');
 
 function Ottomaton(opts) {
   if (!(this instanceof Ottomaton)) return new Ottomaton(opts);

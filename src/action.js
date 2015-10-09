@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = OttomatonAction;
 
 function OttomatonAction(matcher, handler) {
@@ -31,6 +29,7 @@ function normalizeMatcher(matcher) {
     m = matcher;
   } else if (Array.isArray(matcher)) {
     m = buildCompoundMatcher(matcher.map(normalizeMatcher));
+
   } else {
     throw new Error(matcher);
   }
@@ -61,3 +60,4 @@ function buildCompoundMatcher(matchers) {
     return null;
   };
 }
+

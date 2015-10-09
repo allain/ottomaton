@@ -1,5 +1,3 @@
-'use strict';
-
 var util = require('util');
 
 module.exports = OttomatonLineError;
@@ -13,3 +11,4 @@ function OttomatonLineError(lines) {
 }
 
 util.inherits(OttomatonLineError, Error);
+

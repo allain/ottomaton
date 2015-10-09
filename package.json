@@ -2,17 +2,20 @@
   "name": "ottomaton",
   "version": "0.11.0",
   "description": "A toolkit for writing automation script DSLs influenced by Cucumber.",
-  "main": "index.js",
+  "main": "lib/index.js",
   "bin": {
-    "otto": "./bin/otto"
+    "otto": "./lib/bin/otto.js"
   },
   "scripts": {
+    "compile": "babel -d lib/ src/ && chmod +x lib/bin/otto.js",
+    "pretest": "npm run compile",
     "test": "blue-tape test/*.js",
-    "lint": "eslint --fix --config .eslintrc index.js bin/* lib/*.src test/*.js test/*/libraries/*.js"
+    "lint": "eslint --fix --config .eslintrc index.js bin/* lib/*.src test/*.js test/*/libraries/*.js",
+    "prepublish": "npm run lint && npm run test"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/allain/ottomaton.git"
+    "url": "https://github.com/allain/ottomaton"
   },
   "keywords": [
     "automation",
@@ -34,6 +37,7 @@
     "promise-reduce": "^2.0.0"
   },
   "devDependencies": {
+    "babel": "^5.8.23",
     "blue-tape": "^0.1.10"
   }
 }
