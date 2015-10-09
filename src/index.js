@@ -1,32 +1,33 @@
 import Promise from 'native-promise-only';
-var reduce = require('promise-reduce');
-var flatten = require('fj-flatten');
-var defaults = require('defaults');
+import reduce from 'promise-reduce';
+import flatten from 'fj-flatten';
+import defaults from  'defaults';
 
-var debug = require('debug')('ottomaton');
+const debug = require('debug')('ottomaton');
 
-module.exports = Ottomaton;
+export default Ottomaton;
 
-var Action = Ottomaton.Action = require('./action');
-var LineError = Ottomaton.LineError = require('./line-error');
+const Action = Ottomaton.Action = require('./action');
+const LineError = Ottomaton.LineError = require('./line-error');
 
+// To support factory pattern
 function Ottomaton(opts) {
-  if (!(this instanceof Ottomaton)) return new Ottomaton(opts);
-
-  this.opts = defaults(opts, {common: true});
-
-  this.registrations = [];
-  this._actions = null;
+  return new OttomatonClass(opts);
 }
 
-Ottomaton.prototype = {
+class OttomatonClass {
+  constructor(opts) {
+    this.opts = defaults(opts, {common: true});
+    this.registrations = [];
+    this._actions = null;
+  }
+
   // Queue up actions or Promises which resolve to actions or array of actions for later registration
-  register: function (matcher, handler) {
+  register(matcher, handler) {
     if (handler) {
       this.registrations.push(Action(matcher, handler));
       return this;
     }
-
     // Single param registrations
     if (matcher && typeof matcher.then === 'function') {
       this.registrations.push(matcher);
@@ -47,139 +48,130 @@ Ottomaton.prototype = {
     } else {
       throw new Error('invalid arguments');
     }
-
     return this;
-  },
+  }
 
-  run: function (lines, state) {
+  /**
+   * Run all lines through the actions allowing them to mutate the state passed in
+   * @param lines
+   * @param state
+   * @returns the resultant state
+   */
+  run(lines, state = {}) {
     if (typeof lines === 'string') {
       lines = lines.split(/[\r\n]+/g);
     }
-    state = state || {};
+
     state.ottomaton = this;
 
-    return this._buildActions().then(function (actions) {
-      var unrecognizedLines = lines.map(function (line, index) {
-        if (line === Action.FINISH) return false;
+    return this._buildActions().then(actions => {
+      const unrecognizedLines = lines.map((line, index) => {
+        if (line === Action.FINISH)
+          return false;
 
-        if (any(actions, function (action) {
+        return actions.find(action => {
           if (typeof action.matcher !== 'function') {
-            throw new Error('invalid matcher: ' + action.matcher);
+            throw new Error(`invalid matcher: ${ action.matcher }`);
           }
 
           return action.matcher(line);
-        })) {
-          return false;
-        } else {
-          return 'Unrecognized Line: #' + (index + 1) + ': ' + line;
-        }
+        }) ? false : `Unrecognized Line: #${ index + 1 }: ${ line }`;
       }).filter(Boolean);
-
       if (unrecognizedLines.length) {
         return Promise.reject(new LineError(unrecognizedLines));
       }
-
-      if (!lines || !any(lines, function (line) {
+      if (!lines || !any(lines, line => {
         return line === Action.FINISH;
       })) {
         lines.push(Action.FINISH);
       }
-
       return this._execute(lines, state);
-    }.bind(this)).then(function (result) {
+    }).then(result => {
       delete result.ottomaton;
       return result;
     });
-  },
+  }
 
-  _execute: function (lines, state) {
-    state = state || {};
-
-    return Promise.resolve(lines).then(reduce(function (state, line) {
+  _execute(lines, state = {}) {
+    return Promise.resolve(lines).then(reduce((state, line) => {
       return this._executeLine(line, state);
-    }.bind(this), state));
-  },
+    }, state));
+  }
 
-  _executeLine: function (line, state) {
-    var recognized = false;
-    var replacement = null;
-
+  _executeLine(line, state) {
+    let recognized = false;
+    let replacement = null;
     state.LINE = line;
-
     return Promise.resolve(this._actions).then(reduce(function (state, action) {
-      if (replacement !== null) return state; // skip execution
-
-      var args = action.matcher(line);
-
+      if (replacement !== null)
+        return state;
+      // skip execution
+      let args = action.matcher(line);
       if (Array.isArray(args)) {
         recognized = true;
         args = args.length ? this._deref(state, args) : [line];
-        var handlerResult;
-        var handler = action.handler;
-
+        let handlerResult;
+        const handler = action.handler;
         if (typeof handler === 'function') {
           handlerResult = Promise.resolve(handler.apply(state, args));
         } else if (typeof handler === 'string' || Array.isArray(handler)) {
           handlerResult = Promise.resolve(handler);
         } else {
-          throw new Error('Invalid handler: ' + handler);
+          throw new Error(`Invalid handler: ${ handler }`);
         }
-
-        return handlerResult.then(function (result) {
+        return handlerResult.then(result => {
           replacement = result;
-
           return state;
         });
       }
-
       return state;
     }.bind(this), state)).then(function (state) {
-      if ([Action.DONE, Action.FINISH].indexOf(line) === -1 && !recognized) {
-        throw new LineError('Unrecognized Line: ' + line);
+      if ([
+        Action.DONE,
+        Action.FINISH
+      ].indexOf(line) === -1 && !recognized) {
+        throw new LineError(`Unrecognized Line: ${ line }`);
       }
-
-      if ([Action.DONE, Action.FINISH].indexOf(replacement) !== -1) {
-        // Ignore this replacement
+      if ([
+        Action.DONE,
+        Action.FINISH
+      ].indexOf(replacement) !== -1) {
       } else if (typeof replacement === 'string') {
         return this._execute(replacement.split(/[\r\n]+/g), state);
       } else if (Array.isArray(replacement)) {
         return this._execute(replacement, state);
       }
-
       return state;
-    }.bind(this)).then(function (result) {
+    }.bind(this)).then(result => {
       delete result.LINE;
       return result;
-    }, function (err) {
+    }, err => {
       delete state.LINE;
       throw err;
     });
-  },
+  }
 
-  _deref: function (state, refs) {
-    return refs.map(function (ref) {
-      var match = /^"(.+)"$/g.exec(ref);
+  _deref(state, refs) {
+    return refs.map(ref => {
+      let match = /^"(.+)"$/g.exec(ref);
       if (match) {
         return match[1];
       }
-
       match = /^([A-Z][A-Z0-9]*_)*[A-Z0-9]+$/g.exec(ref);
       if (!match) {
         return ref;
       }
-
-      var val = state[ref];
+      const val = state[ref];
       if (val === undefined) {
-        throw new Error('Unknown Reference: ' + ref);
+        throw new Error(`Unknown Reference: ${ ref }`);
       }
-
       return val;
     });
-  },
+  }
 
-  _buildActions: function () {
-    if (this._actions) return Promise.resolve(this._actions);
-
+  _buildActions() {
+    if (this._actions)
+      return Promise.resolve(this._actions);
     if (this.opts.common) {
       // Prepend built-in actions
       this.registrations.unshift([
@@ -189,13 +181,12 @@ Ottomaton.prototype = {
         Action(/^\s*(#|REM )/i, Action.DONE)
       ]);
     }
-
     return Promise.all(this.registrations.map(expandAction)).then(flatten).then(function (actions) {
       this._actions = actions;
-      return actions;Ac
+      return actions;
     }.bind(this));
   }
-};
+}
 
 function expandAction(action) {
   if (typeof action.then === 'function') {
@@ -203,30 +194,25 @@ function expandAction(action) {
   } else if (Array.isArray(action)) {
     return action.map(expandAction);
   }
-
   if (action.matcher === Action.FINISH) {
-    action.matcher = function(line) {
-      return line ===  Action.FINISH ? [] : null;
+    action.matcher = function (line) {
+      return line === Action.FINISH ? [] : null;
     };
   }
-
   if (action.matcher === Action.DONE) {
-    action.matcher = function(line) {
-      return line ===  Action.DONE ? [] : null;
+    action.matcher = function (line) {
+      return line === Action.DONE ? [] : null;
     };
   }
-
   if (!action instanceof Action) {
     action = Action(action.matcher, action.handler);
   }
-
   return action;
 }
-
 function any(array, predicate) {
-  for (var i = 0; i < array.length; i++) {
-    if (predicate(array[i])) return true;
+  for (let i = 0; i < array.length; i++) {
+    if (predicate(array[i]))
+      return true;
   }
   return false;
 }
-

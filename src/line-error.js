@@ -1,14 +1,13 @@
-var util = require('util');
+import util from 'util';
 
-module.exports = OttomatonLineError;
+class OttomatonLineError extends Error {
+  constructor(lines) {
+    let message = `Line Errors:\n${ lines.join('\n') }`;
+    super(message);
 
-function OttomatonLineError(lines) {
-  Error.call(this);
-
-  this.lines = Array.isArray(lines) ? lines : [lines];
-
-  this.message = 'Line Errors:\n' + this.lines.join('\n');
+    this.lines = Array.isArray(lines) ? lines : [lines];
+    this.message = message;
+  }
 }
 
-util.inherits(OttomatonLineError, Error);
-
+export default OttomatonLineError;

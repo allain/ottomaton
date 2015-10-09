@@ -1,17 +1,32 @@
 var test = require('blue-tape');
 
+var ducktype = require('ducktype');
+
 var Ottomaton = require('../lib/index');
 var Action = Ottomaton.Action;
 
+var OttomatonType = ducktype({
+  run: Function,
+  register: Function
+});
+
 test('can be created using constructor', function (t) {
-  var otto = new Ottomaton();
-  t.ok(otto instanceof Ottomaton, 'creates instance of Ottomaton');
+  var opts = {};
+  var otto = new Ottomaton(opts);
+  // Duck type only, I dono't care what it actually is
+  t.equal(typeof otto.run, 'function');
+  t.equal(typeof otto.register, 'function');
+  t.strictEqual(otto.opts, opts);
   t.end();
 });
 
 test('can be created using factory', function (t) {
-  var otto = Ottomaton();
-  t.ok(otto instanceof Ottomaton, 'creates instance of Ottomaton');
+  var opts = {};
+  var otto = new Ottomaton(opts);
+  // Duck type only, I dono't care what it actually is
+  t.equal(typeof otto.run, 'function');
+  t.equal(typeof otto.register, 'function');
+  t.strictEqual(otto.opts, opts);
   t.end();
 });
 
