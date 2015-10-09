@@ -54,6 +54,7 @@ Ottomaton.prototype = {
       lines = lines.split(/[\r\n]+/g);
     }
     state = state || {};
+    state.ottomaton = this;
 
     return this._buildActions().then(function(actions) {
       var unrecognizedLines = lines.map(function (line, index) {
@@ -83,7 +84,10 @@ Ottomaton.prototype = {
       }
 
       return this._execute(lines, state);
-    }.bind(this));
+    }.bind(this)).then(function(result) {
+      delete result.ottomaton;
+      return result;
+    });
   },
   
   _execute: function(lines, state) {

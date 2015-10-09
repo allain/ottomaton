@@ -128,6 +128,20 @@ test('supports commented lines', function (t) {
   });
 });
 
+test('actions can see Ottomaton through this', function(t) {
+  var otto =  Ottomaton();
+
+  return otto.register('a', function() {
+    t.equal(otto, this.ottomaton);
+  }).run('a');
+});
+
+test('run returns state without ottomaton in it', function(t) {
+  return Ottomaton().run('').then(function(result) {
+    t.strictEqual(result.ottomaton, undefined);
+  });
+});
+
 test('supports disabling common actions', function (t) {
   return Ottomaton({common: false}).run('# not a comment').then(t.fail, function (err) {
     t.ok(err instanceof Error, 'expects an error');

@@ -45,11 +45,13 @@ otto.register({
   }
 });
 
+// Values that are all CAPS are treated as references to values in the state
 otto.run([
   'add 1 and 2',
   'multiply it by 3',
+  'multiply it by DOUBLE',
   'print it'
-]).then(function(state) {
+], { DOUBLE: 2 }).then(function(state) {
   // if you want it
   console.log(JSON.stringify(state));
 });
