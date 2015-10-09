@@ -204,19 +204,6 @@ function expandAction(action) {
     return action.map(expandAction);
   }
 
-  if (Array.isArray(action.matcher)) {
-    var matchers = action.matcher;
-    action.matcher = function (line) {
-      for (var i = 0; i < matchers.length; i++) {
-        console.log(matchers[i]);
-        var args = matchers[i](line);
-        if (Array.isArray(args)) {
-          return args;
-        }
-      }
-    };
-  }
-
   if (action.matcher === Action.FINISH) {
     action.matcher = function(line) {
       return line ===  Action.FINISH ? [] : null;
