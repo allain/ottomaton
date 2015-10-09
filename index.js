@@ -3,6 +3,8 @@ var reduce = require('promise-reduce');
 var flatten = require('fj-flatten');
 var defaults = require('defaults');
 
+var debug = require('debug')('ottomaton');
+
 module.exports = Ottomaton;
 
 var Action = Ottomaton.Action = require('./lib/action');
@@ -93,10 +95,6 @@ Ottomaton.prototype = {
   _execute: function (lines, state) {
     state = state || {};
 
-    if (typeof lines === 'string') {
-      lines = lines.split(/[\r\n]+/g);
-    }
-
     return Promise.resolve(lines).then(reduce(function (state, line) {
       return this._executeLine(line, state);
     }.bind(this), state));
@@ -112,6 +110,7 @@ Ottomaton.prototype = {
       if (replacement !== null) return state; // skip execution
 
       var args = action.matcher(line);
+
       if (Array.isArray(args)) {
         recognized = true;
         args = args.length ? this._deref(state, args) : [line];
@@ -127,9 +126,7 @@ Ottomaton.prototype = {
         }
 
         return handlerResult.then(function (result) {
-          if (typeof result === 'string' || Array.isArray(result)) {
-            replacement = result;
-          }
+          replacement = result;
 
           return state;
         });
@@ -141,8 +138,10 @@ Ottomaton.prototype = {
         throw new LineError('Unrecognized Line: ' + line);
       }
 
-      if (typeof replacement === 'string' && [Action.DONE, Action.FINISH].indexOf(replacement) === -1) {
-        return this._execute(replacement, state);
+      if ([Action.DONE, Action.FINISH].indexOf(replacement) !== -1) {
+        // Ignore this replacement
+      } else if (typeof replacement === 'string') {
+        return this._execute(replacement.split(/[\r\n]+/g), state);
       } else if (Array.isArray(replacement)) {
         return this._execute(replacement, state);
       }
@@ -185,20 +184,15 @@ Ottomaton.prototype = {
       // Prepend built-in actions
       this.registrations.unshift([
         // Skip blank lines
-        Action(/^\s*$/, function () {
-          return Action.DONE;
-        }),
-
+        Action(/^\s*$/, Action.DONE),
         // Ignore commented lines
-        Action(/^\s*(#|REM )/i, function () {
-          return Action.DONE;
-        })
+        Action(/^\s*(#|REM )/i, Action.DONE)
       ]);
     }
 
     return Promise.all(this.registrations.map(expandAction)).then(flatten).then(function (actions) {
       this._actions = actions;
-      return actions;
+      return actions;Ac
     }.bind(this));
   }
 };
@@ -208,15 +202,38 @@ function expandAction(action) {
     return action.then(expandAction);
   } else if (Array.isArray(action)) {
     return action.map(expandAction);
-  } else if (Array.isArray(action.matcher)) {
-    return action.matcher.map(function (m) {
-      return Action(m, action.handler); // In case it returns a promise
-    });
-  } else if (action instanceof Action) {
-    return action;
-  } else if (action.matcher && action.handler) {
-    return Action(action.matcher, action.handler);
   }
+
+  if (Array.isArray(action.matcher)) {
+    var matchers = action.matcher;
+    action.matcher = function (line) {
+      for (var i = 0; i < matchers.length; i++) {
+        console.log(matchers[i]);
+        var args = matchers[i](line);
+        if (Array.isArray(args)) {
+          return args;
+        }
+      }
+    };
+  }
+
+  if (action.matcher === Action.FINISH) {
+    action.matcher = function(line) {
+      return line ===  Action.FINISH ? [] : null;
+    };
+  }
+
+  if (action.matcher === Action.DONE) {
+    action.matcher = function(line) {
+      return line ===  Action.DONE ? [] : null;
+    };
+  }
+
+  if (!action instanceof Action) {
+    action = Action(action.matcher, action.handler);
+  }
+
+  return action;
 }
 
 function any(array, predicate) {

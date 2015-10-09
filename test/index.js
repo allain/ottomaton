@@ -118,6 +118,7 @@ test('implicitly adds a FINISH line at end of scripts', function (t) {
   }).run([]);
 });
 
+
 test('returning DONE causes any other matching actions to be skipped', function (t) {
   return Ottomaton().register('a', function () {
     return Action.DONE;
