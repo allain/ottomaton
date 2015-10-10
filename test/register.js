@@ -60,6 +60,15 @@ test('register - supports registration of actions array', function (t) {
   t.end();
 });
 
+test('register - supports registration of an empty actions array', function (t) {
+  var otto = new Ottomaton({common: false});
+
+  otto.register([]);
+
+  t.equal(otto.registrations.length, 0);
+  t.end();
+});
+
 test('register - supports registration of hash', function (t) {
   var otto = new Ottomaton({common: false});
   otto.register({
