@@ -1,6 +1,6 @@
 {
   "name": "ottomaton",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "A toolkit for writing automation script DSLs influenced by Cucumber.",
   "main": "lib/index.js",
   "bin": {
