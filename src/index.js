@@ -56,6 +56,11 @@ class Ottomaton {
       lines = lines.split(/[\r\n]+/g);
     }
 
+    // convert FINISH string into Action.FINISH
+    lines = lines.map(function(line) {
+      return line === 'FINISH' ? Action.FINISH : line;
+    });
+
     state.ottomaton = this;
 
     const actions = this._actions = await Action.prepareActions(this.registrations);

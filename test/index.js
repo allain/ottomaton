@@ -173,7 +173,15 @@ test('core - lines after FINISH are ignored', function (t) {
     t.end();
   }).register('a', function() {
     t.fail('should not get executed');
-  }).run([Action.FINISH, 'a', Action.FINISH]);
+  }).run([Action.FINISH, 'a', Action.FINISH]).catch(t.end);
+});
+
+test('core - string lines FINISH is treated as Action.FINISH', function (t) {
+  Ottomaton().register(Action.FINISH, function () {
+    t.end();
+  }).register('a', function() {
+    t.fail('should not get executed');
+  }).run(['FINISH', 'a', Action.FINISH]).catch(t.end);
 });
 
 test('core - ALL_CAPS get treated as reference to props in the state', function (t) {
