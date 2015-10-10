@@ -10,7 +10,7 @@ const debug = require('debug')('ottomaton');
 const Action = require('./action');
 const LineError = require('./line-error');
 
-const COMMON_ACTIONS = {
+const COMMON_ACTIONS = [
   // Skip blank lines
   Action(/^\s*$/, Action.DONE),
 
@@ -65,8 +65,8 @@ class Ottomaton {
     });
 
     if (unrecognizedLine) {
-      debug('unrecognized line: %j', line);
-      throw new LineError(`Unrecognized Line: #${ unrecognizedIndex + 1 }: ${ line }`);
+      debug('unrecognized line: %j', unrecognizedLine);
+      throw new LineError(`Unrecognized Line: ${ unrecognizedLine }`);
     }
 
     lines.push(Action.FINISH);
@@ -210,4 +210,6 @@ function complainAboutLine(errored, line) {
 }
 
 export default factory(Ottomaton);
+
+
 

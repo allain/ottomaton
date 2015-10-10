@@ -62,7 +62,7 @@ test('core - nothing is executed if a line does not have any actions', function 
     }
   }).run(['a', 'huh?']).then(t.fail, function (err) {
     t.ok(err instanceof Error);
-    t.equal(err.message, 'Line Errors:\nUnrecognized Line: #2: huh?');
+    t.equal(err.message, 'Line Errors:\nUnrecognized Line: huh?');
   });
 });
 
