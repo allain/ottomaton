@@ -59,7 +59,7 @@ class Ottomaton {
 
     state.ottomaton = this;
 
-    const actions = this._actions = await expandActions(this.registrations);
+    const actions = this._actions = await Action.flattenActions(this.registrations);
 
     const unrecognizedLine = lines.find(line => {
       return !actions.find(action => action.matcher(line));
@@ -181,37 +181,6 @@ function deref(state, refs) {
 
 Ottomaton.Action = Action;
 Ottomaton.LineError = LineError;
-
-function expandActions(actions) {
-  return Promise.all(actions).then(function(actions) {
-    return flatten(actions.map(expandAction))
-  });
-}
-
-function expandAction(action) {
-  if (isPromise(action)) {
-    return action.then(expandAction);
-  } else if (Array.isArray(action)) {
-    return action.map(expandAction);
-  }
-
-  if (action.matcher === Action.FINISH) {
-    action.matcher = function (line) {
-      return line === Action.FINISH ? [] : null;
-    };
-  }
-
-  if (action.matcher === Action.DONE) {
-    action.matcher = function (line) {
-      return line === Action.DONE ? [] : null;
-    };
-  }
-
-  if (!action instanceof Action.Impl) {
-    action = Action(action.matcher, action.handler);
-  }
-  return action;
-}
 
 export default factory(Ottomaton);
 

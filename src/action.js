@@ -1,6 +1,11 @@
 import factory from 'simple-factory';
 import mapIn from 'map-in';
 import isPromise from 'is-promise';
+import map from 'fj-map';
+import flatten from 'fj-flatten';
+
+function FINISH() { return FINISH; };
+function DONE() { return DONE; };
 
 class OttomatonAction {
   constructor(matcher, handler) {
@@ -11,6 +16,9 @@ class OttomatonAction {
     this.handler = handler;
   }
 }
+
+OttomatonAction.FINISH = FINISH;
+OttomatonAction.DONE = DONE;
 
 OttomatonAction.build = function(matcher, ottomaton) {
   if (isPromise(matcher)) {
@@ -32,15 +40,34 @@ OttomatonAction.build = function(matcher, ottomaton) {
   }
 };
 
-OttomatonAction.Impl = OttomatonAction;
-
-OttomatonAction.FINISH = function FINISH() {
-  return FINISH;
+OttomatonAction.flattenActions = function(actions) {
+  return Promise.all(actions).then(map(flattenAction)).then(flatten);
 };
 
-OttomatonAction.DONE = function DONE() {
-  return DONE;
-};
+function flattenAction(action) {
+  if (isPromise(action)) {
+    return action.then(flattenAction);
+  } else if (Array.isArray(action)) {
+    return action.map(flattenAction);
+  }
+
+  if (action.matcher === FINISH) {
+    action.matcher = function (line) {
+      return line === FINISH ? [] : null;
+    };
+  }
+
+  if (action.matcher === DONE) {
+    action.matcher = function (line) {
+      return line === DONE ? [] : null;
+    };
+  }
+
+  if (!action instanceof OttomatonAction) {
+    action = Action(action.matcher, action.handler);
+  }
+  return action;
+}
 
 export default factory(OttomatonAction);
 
