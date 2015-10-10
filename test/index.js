@@ -168,7 +168,15 @@ test('core - supports disabling common actions', function (t) {
   });
 });
 
-test('core - lines after FINISH are ignored', function (t) {
+
+test('core - lines after FINISH are not examined at all', function (t) {
+  Ottomaton().register(Action.FINISH, function () {
+    t.end();
+  }).run([Action.FINISH, 'MISSING']).catch(t.end);
+});
+
+
+test('core - lines after FINISH are not executed', function (t) {
   Ottomaton().register(Action.FINISH, function () {
     t.end();
   }).register('a', function() {

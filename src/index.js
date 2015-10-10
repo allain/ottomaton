@@ -56,10 +56,15 @@ class Ottomaton {
       lines = lines.split(/[\r\n]+/g);
     }
 
-    // convert FINISH string into Action.FINISH
-    lines = lines.map(function(line) {
-      return line === 'FINISH' ? Action.FINISH : line;
-    });
+    // Only examine and perform lines that happen before the FINISH
+    let newLines = [];
+    for (let line of lines) {
+      if (line === Action.FINISH || line === 'FINISH')
+        break;
+
+      newLines.push(line);
+    }
+    lines = newLines;
 
     state.ottomaton = this;
 
