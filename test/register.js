@@ -48,7 +48,8 @@ test('register - supports registration of a single action', function (t) {
 });
 
 test('register - supports registration of actions array', function (t) {
-  var otto = new Ottomaton();
+  var otto = new Ottomaton({common: false});
+
   otto.register([{
     matcher: /^test$/, handler: function () {
       t.fail('should not be called');
@@ -60,7 +61,7 @@ test('register - supports registration of actions array', function (t) {
 });
 
 test('register - supports registration of hash', function (t) {
-  var otto = new Ottomaton();
+  var otto = new Ottomaton({common: false});
   otto.register({
     'test': function () {
     }

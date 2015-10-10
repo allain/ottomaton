@@ -21,7 +21,7 @@ const COMMON_ACTIONS = [
 class Ottomaton {
   constructor(opts) {
     this.opts = defaults(opts, {common: true});
-    this.registrations = [];
+    this.registrations = [].concat(this.opts.common ? COMMON_ACTIONS : []);
     this._actions = null;
   }
 
@@ -57,8 +57,7 @@ class Ottomaton {
 
     state.ottomaton = this;
 
-    const registrations = this.opts.common ? COMMON_ACTIONS.concat(this.registrations) : this.registrations;
-    const actions = this._actions = await Promise.all(registrations.map(expandAction)).then(flatten);
+    const actions = this._actions = await expandActions(this.registrations);
 
     const unrecognizedLine = lines.find(line => {
       return !actions.find(action => action.matcher(line));
@@ -111,7 +110,7 @@ class Ottomaton {
 
       recognized = true;
 
-      args = args.length ? self._deref(state, args) : [line];
+      args = args.length ? deref(state, args) : [line];
 
       let handlerResult;
       const handler = action.handler;
@@ -156,27 +155,32 @@ class Ottomaton {
     }
   }
 
-  _deref(state, refs) {
-    return refs.map(ref => {
-      let match = /^"(.+)"$/g.exec(ref);
-      if (match)
-        return match[1];
+}
 
-      match = /^([A-Z][A-Z0-9]*_)*[A-Z0-9]+$/g.exec(ref);
-      if (!match)
-        return ref;
+function deref(state, refs) {
+  return refs.map(ref => {
+    let match = /^"(.+)"$/g.exec(ref);
+    if (match)
+      return match[1];
 
-      const val = state[ref];
-      if (val === undefined)
-        throw new Error(`Unknown Reference: ${ ref }`);
+    match = /^([A-Z][A-Z0-9]*_)*[A-Z0-9]+$/g.exec(ref);
+    if (!match)
+      return ref;
 
-      return val;
-    });
-  }
+    const val = state[ref];
+    if (val === undefined)
+      throw new Error(`Unknown Reference: ${ ref }`);
+
+    return val;
+  });
 }
 
 Ottomaton.Action = Action;
 Ottomaton.LineError = LineError;
+
+function expandActions(actions) {
+  return Promise.all(actions.map(expandAction)).then(flatten);
+}
 
 function expandAction(action) {
   if (typeof action.then === 'function') {
@@ -203,13 +207,6 @@ function expandAction(action) {
   return action;
 }
 
-function complainAboutLine(errored, line) {
-  if (errored) {
-    throw new LineError(line || errored);
-  }
-}
-
 export default factory(Ottomaton);
-
 
 
