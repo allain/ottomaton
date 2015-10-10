@@ -10,7 +10,7 @@ const debug = require('debug')('ottomaton');
 const Action = require('./action');
 const LineError = require('./line-error');
 
-const COMMON_ACTIONS = [
+const COMMON_ACTIONS = {
   // Skip blank lines
   Action(/^\s*$/, Action.DONE),
 
@@ -25,14 +25,10 @@ class Ottomaton {
     this._actions = null;
   }
 
-  // Queue up actions or Promises which resolve to actions or array of actions for later registration
   register(matcher, handler) {
     if (handler) {
       this.registrations.push(Action(matcher, handler));
-      return this;
-    }
-    // Single param registrations
-    if (matcher && typeof matcher.then === 'function') {
+    } else if (matcher && typeof matcher.then === 'function') {
       this.registrations.push(matcher);
     } else if (typeof matcher === 'function') {
       this.registrations.push(matcher(this));
@@ -53,12 +49,7 @@ class Ottomaton {
     return this;
   }
 
-  /**
-   * Run all lines through the actions allowing them to mutate the state passed in
-   * @param lines
-   * @param state
-   * @returns the resultant state
-   */
+  // Run all lines throug the actions allowing them to mutate the state passed in.
   async run(lines, state={}) {
     if (typeof lines === 'string') {
       lines = lines.split(/[\r\n]+/g);
@@ -69,13 +60,11 @@ class Ottomaton {
     const registrations = this.opts.common ? COMMON_ACTIONS.concat(this.registrations) : this.registrations;
     const actions = this._actions = await Promise.all(registrations.map(expandAction)).then(flatten);
 
-    const unrecognizedIndex = lines.findIndex((line, index) => {
+    const unrecognizedLine = lines.find(line => {
       return !actions.find(action => action.matcher(line));
     });
 
-
-    if (unrecognizedIndex !== -1) {
-      var line = lines[unrecognizedIndex];
+    if (unrecognizedLine) {
       debug('unrecognized line: %j', line);
       throw new LineError(`Unrecognized Line: #${ unrecognizedIndex + 1 }: ${ line }`);
     }
@@ -212,6 +201,12 @@ function expandAction(action) {
     action = Action(action.matcher, action.handler);
   }
   return action;
+}
+
+function complainAboutLine(errored, line) {
+  if (errored) {
+    throw new LineError(line || errored);
+  }
 }
 
 export default factory(Ottomaton);
