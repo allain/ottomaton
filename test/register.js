@@ -60,6 +60,26 @@ test('register - supports registration of actions array', function (t) {
   t.end();
 });
 
+test('register - support registration of an array of actions that have array matchers', function(t) {
+  var otto = new Ottomaton({common: false});
+  otto.register([
+    {
+      matcher: [
+        /^a$/i,
+        /^b$/i
+      ],
+
+      handler: function(line) {
+        this.output.push(line);
+      }
+    }
+  ]);
+
+  return otto.run(['a','b'], {output: []}).then(function(result) {
+    t.deepEqual(result.output, ['a', 'b']);
+  });
+});
+
 test('register - supports registration of an empty actions array', function (t) {
   var otto = new Ottomaton({common: false});
 

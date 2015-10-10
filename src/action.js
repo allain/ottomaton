@@ -37,6 +37,7 @@ function prepareMatcher(matcher) {
 
   if (Array.isArray(matcher)) {
     matcher = matcher.map(prepareMatcher);
+
     return line => {
       var match = matcher.find(m => Array.isArray(m(line)));
       return match ? match(line) : null;
@@ -49,7 +50,7 @@ function prepareMatcher(matcher) {
 Action.FINISH = FINISH;
 Action.DONE = DONE;
 
-Action.build = function(matcher, ottomaton) {
+Action.build = function build(matcher, ottomaton) {
   if (isPromise(matcher))
     return matcher;
 
@@ -60,7 +61,9 @@ Action.build = function(matcher, ottomaton) {
     return matcher;
 
   if (Array.isArray(matcher))
-    return matcher;
+    return matcher.map(function(m) {
+      return build(m, ottomaton);
+    });
 
   if (typeof matcher === 'object' && matcher.handler && matcher.matcher)
     return new Action(matcher.matcher, matcher.handler);
@@ -88,8 +91,9 @@ function prepareAction(action) {
   else if (action.matcher === DONE)
     action.matcher = line => line === DONE ? [] : null;
 
-  if (!action instanceof Action)
+  if (!action instanceof Action) {
     action = Action(action.matcher, action.handler);
+  }
 
   return action;
 }

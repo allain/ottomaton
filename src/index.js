@@ -65,9 +65,7 @@ class Ottomaton {
 
     const actions = this._actions = await Action.prepareActions(this.registrations);
 
-    const unrecognizedLine = lines.find(line => {
-      return !actions.find(action => action.matcher(line));
-    });
+    const unrecognizedLine = lines.find(line => !actions.find(action => action.matcher(line)));
 
     if (unrecognizedLine) {
       debug('unrecognized line: %j', unrecognizedLine);
