@@ -1,27 +1,35 @@
 var test = require('blue-tape');
 
-var Ottomaton = require('..');
+var Ottomaton = require('../lib/index');
 var Action = Ottomaton.Action;
 
-test('can be created using constructor', function (t) {
-  var otto = new Ottomaton();
-  t.ok(otto instanceof Ottomaton, 'creates instance of Ottomaton');
+test('core - can be created using constructor', function (t) {
+  var opts = {};
+  var otto = new Ottomaton(opts);
+  // Duck type only, I dono't care what it actually is
+  t.equal(typeof otto.run, 'function');
+  t.equal(typeof otto.register, 'function');
+  t.strictEqual(otto.opts, opts);
   t.end();
 });
 
-test('can be created using factory', function (t) {
-  var otto = Ottomaton();
-  t.ok(otto instanceof Ottomaton, 'creates instance of Ottomaton');
+test('core - can be created using factory', function (t) {
+  var opts = {};
+  var otto = new Ottomaton(opts);
+  // Duck type only, I dono't care what it actually is
+  t.equal(typeof otto.run, 'function');
+  t.equal(typeof otto.register, 'function');
+  t.strictEqual(otto.opts, opts);
   t.end();
 });
 
-test('if a matcher returns an empty array, then the arg will be the entire line', function (t) {
+test('core - if a matcher returns an empty array, then the arg will be the entire line', function (t) {
   return Ottomaton().register(/^a$/, function (line) {
     t.equal(line, 'a');
   }).run('a');
 });
 
-test('invokes matching actions when run', function (t) {
+test('core - invokes matching actions when run', function (t) {
   var testCalls = 0;
 
   return Ottomaton().register({
@@ -38,7 +46,7 @@ test('invokes matching actions when run', function (t) {
   });
 });
 
-test('passes current line into handler as this.LINE', function(t) {
+test('core - passes current line into handler as this.LINE', function(t) {
   return Ottomaton().register(/^Hello (.*)$/i, function(value) {
     t.equal(value, 'World!');
     t.equal(this.LINE, 'Hello World!');
@@ -47,18 +55,18 @@ test('passes current line into handler as this.LINE', function(t) {
   });
 });
 
-test('nothing is executed if a line does not have any actions', function (t) {
+test('core - nothing is executed if a line does not have any actions', function (t) {
   return Ottomaton().register({
     'a': function () {
       t.fail('this should never be executed');
     }
   }).run(['a', 'huh?']).then(t.fail, function (err) {
     t.ok(err instanceof Error);
-    t.equal(err.message, 'Line Errors:\nUnrecognized Line: #2: huh?');
+    t.equal(err.message, 'Line Errors:\nUnrecognized Line: huh?');
   });
 });
 
-test('handlers can rewrite current line by returning its mutation', function (t) {
+test('core - handlers can rewrite current line by returning its mutation', function (t) {
   return Ottomaton().register({
     'a': function () {
       return 'b';
@@ -71,7 +79,7 @@ test('handlers can rewrite current line by returning its mutation', function (t)
   });
 });
 
-test('actions can expand current line into a script', function (t) {
+test('core - actions can expand current line into a script', function (t) {
   return Ottomaton().register({
     'a': function () {
       this.result += 'A';
@@ -92,7 +100,7 @@ test('actions can expand current line into a script', function (t) {
   });
 });
 
-test('handler "this" is same passed in state across runs', function (t) {
+test('core - handler "this" is same passed in state across runs', function (t) {
   var state = {handled: 0};
 
   return Ottomaton().register({
@@ -110,7 +118,7 @@ test('handler "this" is same passed in state across runs', function (t) {
   });
 });
 
-test('implicitly adds a FINISH line at end of scripts', function (t) {
+test('core - implicitly adds a FINISH line at end of scripts', function (t) {
   var ottomaton = Ottomaton();
 
   ottomaton.register(Action.FINISH, function () {
@@ -119,13 +127,13 @@ test('implicitly adds a FINISH line at end of scripts', function (t) {
 });
 
 
-test('returning DONE causes any other matching actions to be skipped', function (t) {
+test('core - returning DONE causes any other matching actions to be skipped', function (t) {
   return Ottomaton().register('a', function () {
     return Action.DONE;
   }).register('a', t.fail).run('a');
 });
 
-test('supports commented lines', function (t) {
+test('core - supports commented lines', function (t) {
   return Ottomaton().register('a', function () {
     this.a = 'A';
   }).run([
@@ -138,33 +146,37 @@ test('supports commented lines', function (t) {
   });
 });
 
-test('actions can see Ottomaton through this', function(t) {
+test('core - actions can see Ottomaton through this', function(t) {
   var otto =  Ottomaton();
 
-  return otto.register('a', function() {
+  otto.register('a', function() {
     t.equal(otto, this.ottomaton);
-  }).run('a');
+  }).register(Action.FINISH, function() {
+    t.end();
+  }).run('a').catch(t.fail);
 });
 
-test('run returns state without ottomaton in it', function(t) {
+test('core - run returns state without ottomaton in it', function(t) {
   return Ottomaton().run('').then(function(result) {
     t.strictEqual(result.ottomaton, undefined);
   });
 });
 
-test('supports disabling common actions', function (t) {
+test('core - supports disabling common actions', function (t) {
   return Ottomaton({common: false}).run('# not a comment').then(t.fail, function (err) {
     t.ok(err instanceof Error, 'expects an error');
   });
 });
 
-test('does not add FINISH if it is already there', function (t) {
+test('core - lines after FINISH are ignored', function (t) {
   Ottomaton().register(Action.FINISH, function () {
     t.end();
-  }).run([Action.FINISH]);
+  }).register('a', function() {
+    t.fail('should not get executed');
+  }).run([Action.FINISH, 'a', Action.FINISH]);
 });
 
-test('ALL_CAPS get treated as reference to props in the state', function (t) {
+test('core - ALL_CAPS get treated as reference to props in the state', function (t) {
   return Ottomaton().register('print "MESSAGE"', function (msg) {
     this.output.push(msg);
   }).run([

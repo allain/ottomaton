@@ -18,22 +18,22 @@ npm install -g ottomaton
 
 ```bash
 # run a script file
-otto ./libs/a.js ./libs/b script.txt
+otto.js ./libs/a.js ./libs/b script.txt
 
 # run script and pass in params as properties of state available to actions
-cat print MESSAGE | otto --MESSAGE "Hello World" ./libs/print-param.js
+cat print MESSAGE | otto.js --MESSAGE "Hello World" ./libs/print-param.js
 
 # run the piped script
-cat script.txt | otto libs/a.js libs/b
+cat script.txt | otto.js libs/a.js libs/b
 
 ```
 
 ## Example Usage
 
 ```js
-var otto = Ottomaton();
+var otto.js = Ottomaton();
 
-otto.register({
+otto.js.register({
   'add "a" and "b"': function(a, b) {
     this.result = parseInt(a, 10) + parseInt(b, 10);
   },
@@ -46,7 +46,7 @@ otto.register({
 });
 
 // Values that are all CAPS are treated as references to values in the state
-otto.run([
+otto.js.run([
   'add 1 and 2',
   'multiply it by 3',
   'multiply it by DOUBLE',
