@@ -1,4 +1,6 @@
 import factory from 'simple-factory';
+import mapIn from 'map-in';
+import isPromise from 'is-promise';
 
 class OttomatonAction {
   constructor(matcher, handler) {
@@ -10,6 +12,25 @@ class OttomatonAction {
   }
 }
 
+OttomatonAction.build = function(matcher, ottomaton) {
+  if (isPromise(matcher)) {
+    return matcher;
+  } else if (typeof matcher === 'function') {
+    return matcher(ottomaton);
+  } else if (matcher instanceof OttomatonAction) {
+    return matcher;
+  } else if (Array.isArray(matcher)) {
+    return matcher;
+  } else if (typeof matcher === 'object') {
+    if (matcher.handler && matcher.matcher) {
+      return new OttomatonAction(matcher.matcher, matcher.handler);
+    } else {
+      return Object.values(mapIn(matcher, (handler, m) => new OttomatonAction(m, handler)));
+    }
+  } else {
+    throw new Error('invalid matcher arguments: ' + arguments);
+  }
+};
 
 OttomatonAction.Impl = OttomatonAction;
 

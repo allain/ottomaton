@@ -4,6 +4,7 @@ import flatten from 'fj-flatten';
 import defaults from 'defaults';
 import factory from 'simple-factory';
 import mapIn from 'map-in';
+import isPromise from 'is-promise';
 
 const debug = require('debug')('ottomaton');
 
@@ -25,25 +26,26 @@ class Ottomaton {
     this._actions = null;
   }
 
+  /**
+  * Registers an action for later use during run.
+  *
+  * Supports many call strategies:
+  *
+  * Single simple object
+  * register({matcher: ..., handler: ...})
+  *
+  * A hash of text matchers, to their respective handlers
+  * register({TEXT1: handler, TEXT2: handler, ...})
+  *
+  * A promise which will eventually resolve to an array or hash or Actions
+  * register(Promise)
+  */
   register(matcher, handler) {
     if (handler) {
       this.registrations.push(Action(matcher, handler));
-    } else if (matcher && typeof matcher.then === 'function') {
-      this.registrations.push(matcher);
-    } else if (typeof matcher === 'function') {
-      this.registrations.push(matcher(this));
-    } else if (matcher instanceof Action.Impl) {
-      this.registrations.push(matcher);
-    } else if (Array.isArray(matcher)) {
-      this.registrations.push(matcher);
-    } else if (typeof matcher === 'object') {
-      if (matcher.handler && matcher.matcher) {
-        this.registrations.push(Action(matcher.matcher, matcher.handler));
-      } else {
-        Object.keys(matcher).forEach(m => this.register(m, matcher[m]));
-      }
     } else {
-      throw new Error('invalid matcher arguments: ' + arguments);
+      let action = Action.build(matcher, this);
+      this.registrations = this.registrations.concat(action);
     }
 
     return this;
@@ -93,6 +95,8 @@ class Ottomaton {
 
   async _executeLine(line, state) {
     const self = this;
+
+    if (typeof state !== 'object') throw new Error('state must be an object: ' + state);
 
     let recognized = false;
     let replacement = null;
@@ -179,11 +183,13 @@ Ottomaton.Action = Action;
 Ottomaton.LineError = LineError;
 
 function expandActions(actions) {
-  return Promise.all(actions.map(expandAction)).then(flatten);
+  return Promise.all(actions).then(function(actions) {
+    return flatten(actions.map(expandAction))
+  });
 }
 
 function expandAction(action) {
-  if (typeof action.then === 'function') {
+  if (isPromise(action)) {
     return action.then(expandAction);
   } else if (Array.isArray(action)) {
     return action.map(expandAction);

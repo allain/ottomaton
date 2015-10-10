@@ -34,6 +34,7 @@
     "defaults": "^1.0.3",
     "fj-flatten": "^1.0.0",
     "get-stdin": "^5.0.0",
+    "is-promise": "^2.1.0",
     "map-in": "^1.0.2",
     "minimist": "^1.2.0",
     "native-promise-only": "^0.8.1",

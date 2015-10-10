@@ -91,6 +91,8 @@ test('register - supports registration of an action generator that returns a pro
   var ottomaton = Ottomaton({a: 'A!'});
 
   return ottomaton.register(function (otto) {
+    t.equal(ottomaton, otto);
+
     var actions = [Ottomaton.Action('a', function () {
       this.result = otto.opts.a;
     })];
