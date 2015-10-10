@@ -39,14 +39,11 @@
     "map-in": "^1.0.2",
     "minimist": "^1.2.0",
     "native-promise-only": "^0.8.1",
-    "promise-reduce": "^2.0.0",
-    "simple-factory": "allain/simple-factory",
-    "tap-dot": "^1.0.0"
+    "simple-factory": "allain/simple-factory"
   },
   "devDependencies": {
     "babel": "^5.8.23",
-    "babel-eslint": "^4.1.3",
     "blue-tape": "^0.1.10",
-    "tap-simple": "^0.3.1"
+    "tap-dot": "^1.0.0"
   }
 }

@@ -1,5 +1,4 @@
 import Promise from 'native-promise-only';
-import reduce from 'promise-reduce';
 import flatten from 'fj-flatten';
 import defaults from 'defaults';
 import factory from 'simple-factory';

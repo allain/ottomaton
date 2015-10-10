@@ -4,7 +4,6 @@ const debug = require('debug')('ottomaton');
 const chalk = require('chalk');
 const getStdin = require('get-stdin');
 const Promise = require('native-promise-only');
-const reduce = require('promise-reduce');
 const fs = require('fs');
 const path = require('path');
 const Ottomaton = require('..');
@@ -36,24 +35,32 @@ try {
   process.exit(1);
 }
 
-if (scripts.length) {
-  Promise.resolve(scripts).then(reduce((state, srcPath) => {
+async function runScripts(scripts, state) {
+  for (let script of scripts) {
+    await otto.run(script, state);
+  }
+}
+
+function loadScriptFiles(scriptPaths, state) {
+  return Object.values(scriptPaths.map(srcPath => {
     srcPath = path.resolve(cwd, srcPath);
-    if (!fs.existsSync(srcPath)) {
+    if (!fs.existsSync(srcPath))
       throw new Error(`file could not be loaded: ${ srcPath }`);
-    }
-    return otto.run(fs.readFileSync(srcPath, 'utf-8'), state);
-  }, argv)).catch(err => {
-    debug('ERROR %j', err);
-    console.error(chalk.red(`ERROR: ${ err.message }`));
-    process.exit(1);
-  });
+
+    return fs.readFileSync(srcPath, 'utf-8');
+  }));
+}
+
+let displayError = err => {
+  debug('ERROR %j', err);
+  console.error(chalk.red(`ERROR: ${ err.message }`));
+  process.exit(1);
+};
+
+if (scripts.length) {
+  runScripts(loadScriptFiles(scripts), argv).catch(displayError);
 } else {
   getStdin().then(function(src) {
-    return otto.run(src, argv).catch(err => {
-      debug('ERROR %j', err);
-      console.error(chalk.red(`ERROR: ${ err.message }`));
-      process.exit(1);
-    });
-  });
+    runScripts([src], argv);
+  }).catch(displayError);
 }
