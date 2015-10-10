@@ -78,6 +78,7 @@ class Ottomaton {
     }
 
     let failure;
+    let result;
     try {
       await this._execute(lines, state);
     } catch(err) {
@@ -86,7 +87,7 @@ class Ottomaton {
     }
 
     try {
-      this._executeLine(Action.FINISH, state);
+      await this._executeLine(Action.FINISH, state);
     } catch(err) {
       debug('An ERROR Occured running FINISH: ', err);
       // nothing to do here
@@ -100,6 +101,8 @@ class Ottomaton {
   }
 
   async _execute(lines, state = {}) {
+    debug('executing lines against %d actions', this._actions.length);
+
     for (let i = 0; i < lines.length; i++) {
       var line = lines[i];
 
@@ -123,7 +126,8 @@ class Ottomaton {
     let recognized = false;
     let replacement = null;
 
-    debug('executing line %s against %d actions', line, this._actions.length);
+    debug('executing line %s', line);
+
     for (const action of this._actions) {
       var args;
       if (action.matcher === Action.FINISH) {

@@ -33,7 +33,7 @@ test('register - supports registration of a single action using function', funct
   }, function (l) {
     this.results.push(l);
   }).run(['test Allain'], {results: []}).then(function (result) {
-    t.deepEqual(result.results, ['test Allain']);
+    t.deepEqual(result.results, ['test Allain', Action.FINISH]);
   });
 });
 
@@ -43,7 +43,7 @@ test('register - supports registration of a single action', function (t) {
   }, function (l) {
     this.results.push(l);
   })).run(['test Allain'], {results: []}).then(function (result) {
-    t.deepEqual(result.results, ['test Allain']);
+    t.deepEqual(result.results, ['test Allain', Action.FINISH]);
   });
 });
 

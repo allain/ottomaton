@@ -10,7 +10,8 @@
     "compile": "babel --stage 2 --optional runtime --source-maps true -d lib/ src/ && chmod +x lib/bin/otto.js",
     "clean": "rm -r lib",
     "pretest": "npm run compile",
-    "test": "blue-tape test/*.js | tap-dot",
+    "test": "blue-tape test/*.js",
+    "watch": "watch 'npm run test' src/ test/",
     "prepublish": "npm run clean && npm run test"
   },
   "repository": {
@@ -44,6 +45,7 @@
   "devDependencies": {
     "babel": "^5.8.23",
     "blue-tape": "^0.1.10",
-    "tap-dot": "^1.0.0"
+    "tap-dot": "^1.0.0",
+    "watch": "^0.16.0"
   }
 }
