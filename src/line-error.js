@@ -1,10 +1,8 @@
-import util from 'util';
-
-class OttomatonLineError extends Error {
+class LineError extends Error {
   constructor(lines) {
-  	lines = [].concat(lines);
+    lines = [].concat(lines);
 
-  	let message = `Line Errors:\n${ lines.join('\n') }`;
+    let message = `Line Errors:\n${ lines.join('\n') }`;
     super(message);
 
     this.lines = Array.isArray(lines) ? lines : [lines];
@@ -12,4 +10,4 @@ class OttomatonLineError extends Error {
   }
 }
 
-export default OttomatonLineError;
+export default LineError;

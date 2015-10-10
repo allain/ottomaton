@@ -7,7 +7,7 @@ import flatten from 'fj-flatten';
 var FINISH = () => FINISH;
 var DONE = () => DONE;
 
-class OttomatonAction {
+class Action {
   constructor(matcher, handler) {
     const m = prepareMatcher(matcher);
     if (!m)
@@ -46,33 +46,33 @@ function prepareMatcher(matcher) {
   throw new Error(matcher);
 }
 
-OttomatonAction.FINISH = FINISH;
-OttomatonAction.DONE = DONE;
+Action.FINISH = FINISH;
+Action.DONE = DONE;
 
-OttomatonAction.build = function(matcher, ottomaton) {
+Action.build = function(matcher, ottomaton) {
   if (isPromise(matcher))
     return matcher;
 
   if (typeof matcher === 'function')
     return matcher(ottomaton);
 
-  if (matcher instanceof OttomatonAction)
+  if (matcher instanceof Action)
     return matcher;
 
   if (Array.isArray(matcher))
     return matcher;
 
   if (typeof matcher === 'object' && matcher.handler && matcher.matcher)
-    return new OttomatonAction(matcher.matcher, matcher.handler);
+    return new Action(matcher.matcher, matcher.handler);
 
   if (typeof matcher === 'object')
-      return Object.values(mapIn(matcher, (handler, m) => new OttomatonAction(m, handler)));
+      return Object.values(mapIn(matcher, (handler, m) => new Action(m, handler)));
 
   throw new Error('invalid matcher arguments: ' + arguments);
 };
 
 // Prepares actions by ensuring they are all actually OttomanActions with function matchers
-OttomatonAction.prepareActions = function(actions) {
+Action.prepareActions = function(actions) {
   return Promise.all(actions).then(map(prepareAction)).then(flatten);
 };
 
@@ -88,10 +88,10 @@ function prepareAction(action) {
   else if (action.matcher === DONE)
     action.matcher = line => line === DONE ? [] : null;
 
-  if (!action instanceof OttomatonAction)
+  if (!action instanceof Action)
     action = Action(action.matcher, action.handler);
 
   return action;
 }
 
-export default factory(OttomatonAction);
+export default factory(Action);
