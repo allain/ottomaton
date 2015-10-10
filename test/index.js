@@ -184,6 +184,14 @@ test('core - lines after FINISH are not executed', function (t) {
   }).run([Action.FINISH, 'a', Action.FINISH]).catch(t.end);
 });
 
+test('core - if error occurs running an action, script still calls finish', function(t) {
+  Ottomaton().register(Action.FINISH, function () {
+    t.end();
+  }).register('a', function() {
+    throw new Error('FAILURE');
+  }).run(['a']);
+});
+
 test('core - string lines FINISH is treated as Action.FINISH', function (t) {
   Ottomaton().register(Action.FINISH, function () {
     t.end();

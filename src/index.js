@@ -77,11 +77,26 @@ class Ottomaton {
       throw new LineError(`Unrecognized Line: ${ unrecognizedLine }`);
     }
 
-    lines.push(Action.FINISH);
+    let failure;
+    try {
+      await this._execute(lines, state);
+    } catch(err) {
+      failure = err;
+      debug('An ERROR Occured: ', err);
+    }
 
-    var result = await this._execute(lines, state);
-    delete result.ottomaton;
-    return result;
+    try {
+      this._executeLine(Action.FINISH, state);
+    } catch(err) {
+      debug('An ERROR Occured running FINISH: ', err);
+      // nothing to do here
+    }
+
+    delete state.ottomaton;
+
+    if (failure) throw failure;
+
+    return state;
   }
 
   async _execute(lines, state = {}) {
