@@ -9,13 +9,41 @@ var DONE = () => DONE;
 
 class OttomatonAction {
   constructor(matcher, handler) {
-    const m = normalizeMatcher(matcher);
+    const m = prepareMatcher(matcher);
     if (!m)
       throw new Error(`Invalid matcher: ${ matcher }`);
 
     this.matcher = m;
     this.handler = handler;
   }
+}
+
+// Prepares a matcher by convert it to a function
+function prepareMatcher(matcher) {
+  if (typeof matcher === 'function')
+    return matcher;
+
+  if (typeof matcher === 'string')
+    matcher = new RegExp(`^${ matcher.replace(/"[^"]+"/g, '(.+)') }$`);
+
+  if (matcher instanceof RegExp)
+    return line => {
+      const args = matcher.exec(line);
+      if (args)
+          args.shift();
+      return args;
+    };
+
+
+  if (Array.isArray(matcher)) {
+    matcher = matcher.map(prepareMatcher);
+    return line => {
+      var match = matcher.find(m => Array.isArray(m(line)));
+      return match ? match(line) : null;
+    };
+  }
+
+  throw new Error(matcher);
 }
 
 OttomatonAction.FINISH = FINISH;
@@ -43,67 +71,27 @@ OttomatonAction.build = function(matcher, ottomaton) {
   throw new Error('invalid matcher arguments: ' + arguments);
 };
 
-OttomatonAction.flattenActions = function(actions) {
-  return Promise.all(actions).then(map(flattenAction)).then(flatten);
+// Prepares actions by ensuring they are all actually OttomanActions with function matchers
+OttomatonAction.prepareActions = function(actions) {
+  return Promise.all(actions).then(map(prepareAction)).then(flatten);
 };
 
-function flattenAction(action) {
-  if (isPromise(action)) {
-    return action.then(flattenAction);
-  } else if (Array.isArray(action)) {
-    return action.map(flattenAction);
-  }
+function prepareAction(action) {
+  if (isPromise(action))
+    return action.then(prepareAction);
 
-  if (action.matcher === FINISH) {
-    action.matcher = function (line) {
-      return line === FINISH ? [] : null;
-    };
-  }
+  if (Array.isArray(action))
+    return action.map(prepareAction);
 
-  if (action.matcher === DONE) {
-    action.matcher = function (line) {
-      return line === DONE ? [] : null;
-    };
-  }
+  if (action.matcher === FINISH)
+    action.matcher = line => line === FINISH ? [] : null;
+  else if (action.matcher === DONE)
+    action.matcher = line => line === DONE ? [] : null;
 
-  if (!action instanceof OttomatonAction) {
+  if (!action instanceof OttomatonAction)
     action = Action(action.matcher, action.handler);
-  }
+
   return action;
 }
 
 export default factory(OttomatonAction);
-
-function normalizeMatcher(matcher) {
-    let m;
-    if (typeof matcher === 'string') {
-        m = buildMatcherFromRegExp(new RegExp(`^${ matcher.replace(/"[^"]+"/g, '(.+)') }$`));
-    } else if (matcher instanceof RegExp) {
-        m = buildMatcherFromRegExp(matcher);
-    } else if (typeof matcher === 'function') {
-        m = matcher;
-    } else if (Array.isArray(matcher)) {
-        m = buildCompoundMatcher(matcher.map(normalizeMatcher));
-    } else {
-        throw new Error(matcher);
-    }
-    return m;
-}
-
-function buildMatcherFromRegExp(regexp) {
-    return function (line) {
-        const args = regexp.exec(line);
-        if (args) {
-            args.shift();
-        }
-        return args;
-    };
-}
-
-function buildCompoundMatcher(matchers) {
-    return function (line) {
-      var match = matchers.find(m => Array.isArray(m(line)));
-
-      return match ? match(line) : null;
-    };
-}

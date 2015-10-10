@@ -59,7 +59,7 @@ class Ottomaton {
 
     state.ottomaton = this;
 
-    const actions = this._actions = await Action.flattenActions(this.registrations);
+    const actions = this._actions = await Action.prepareActions(this.registrations);
 
     const unrecognizedLine = lines.find(line => {
       return !actions.find(action => action.matcher(line));
