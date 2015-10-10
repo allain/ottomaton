@@ -18,7 +18,7 @@ class OttomatonAction {
   }
 }
 
-// Prepares a matcher by convert it to a function
+// Prepares a matcher by converting it to a function if needed
 function prepareMatcher(matcher) {
   if (typeof matcher === 'function')
     return matcher;
