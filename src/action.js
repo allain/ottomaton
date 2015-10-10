@@ -4,14 +4,15 @@ import isPromise from 'is-promise';
 import map from 'fj-map';
 import flatten from 'fj-flatten';
 
-function FINISH() { return FINISH; };
-function DONE() { return DONE; };
+var FINISH = () => FINISH;
+var DONE = () => DONE;
 
 class OttomatonAction {
   constructor(matcher, handler) {
     const m = normalizeMatcher(matcher);
     if (!m)
       throw new Error(`Invalid matcher: ${ matcher }`);
+
     this.matcher = m;
     this.handler = handler;
   }
@@ -21,23 +22,25 @@ OttomatonAction.FINISH = FINISH;
 OttomatonAction.DONE = DONE;
 
 OttomatonAction.build = function(matcher, ottomaton) {
-  if (isPromise(matcher)) {
+  if (isPromise(matcher))
     return matcher;
-  } else if (typeof matcher === 'function') {
+
+  if (typeof matcher === 'function')
     return matcher(ottomaton);
-  } else if (matcher instanceof OttomatonAction) {
+
+  if (matcher instanceof OttomatonAction)
     return matcher;
-  } else if (Array.isArray(matcher)) {
+
+  if (Array.isArray(matcher))
     return matcher;
-  } else if (typeof matcher === 'object') {
-    if (matcher.handler && matcher.matcher) {
-      return new OttomatonAction(matcher.matcher, matcher.handler);
-    } else {
+
+  if (typeof matcher === 'object' && matcher.handler && matcher.matcher)
+    return new OttomatonAction(matcher.matcher, matcher.handler);
+
+  if (typeof matcher === 'object')
       return Object.values(mapIn(matcher, (handler, m) => new OttomatonAction(m, handler)));
-    }
-  } else {
-    throw new Error('invalid matcher arguments: ' + arguments);
-  }
+
+  throw new Error('invalid matcher arguments: ' + arguments);
 };
 
 OttomatonAction.flattenActions = function(actions) {
