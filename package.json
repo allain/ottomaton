@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bmullan91/simple-factory"
+    "url": "https://github.com/allain/ottomaton"
   },
   "keywords": [
     "automation",
@@ -33,6 +33,7 @@
     "chalk": "^1.1.1",
     "debug": "^2.2.0",
     "defaults": "^1.0.3",
+    "factorize": "^1.0.0",
     "fj-flatten": "^1.0.0",
     "fj-map": "^1.0.1",
     "get-stdin": "^5.0.0",
