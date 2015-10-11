@@ -8,7 +8,6 @@ import isPromise from 'is-promise';
 const debug = require('debug')('ottomaton');
 
 const Action = require('./action');
-const LineError = require('./line-error');
 
 const COMMON_ACTIONS = [
   // Skip blank lines
@@ -77,7 +76,7 @@ class Ottomaton {
 
     if (unrecognizedLine) {
       debug('unrecognized line: %j', unrecognizedLine);
-      throw new LineError(`Unrecognized Line: ${ unrecognizedLine }`);
+      throw new Error(`Unrecognized Line: ${ unrecognizedLine }`);
     }
 
     let failure;
@@ -175,7 +174,7 @@ class Ottomaton {
     }
 
     if(!recognized) {
-      throw new LineError([line]);
+      throw new Error(`Unrecognized Line: ${ line }`);
     }
 
     if (replacement === undefined) {
@@ -212,6 +211,5 @@ function deref(state, refs) {
 }
 
 Ottomaton.Action = Action;
-Ottomaton.LineError = LineError;
 
 export default factorize(Ottomaton);

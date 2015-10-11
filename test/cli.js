@@ -41,7 +41,7 @@ test('cli - line errors work', function (t) {
   process.chdir(__dirname);
   require('child_process').exec('../lib/bin/otto.js ./libraries/a.js ./fixtures/cli-test.txt', function (err, out, stderr) {
     t.ok(err, 'error is returned');
-    t.equal(stderr, 'ERROR: Line Errors:\nUnrecognized Line: b\n', 'error is correct one');
+    t.equal(stderr, 'ERROR: Unrecognized Line: b\n', 'error is correct one');
     t.equal(out, '', 'no stdout');
     t.end();
   });
