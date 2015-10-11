@@ -1,4 +1,4 @@
-import factory from 'simple-factory';
+import factorize from 'factorize';
 import mapIn from 'map-in';
 import isPromise from 'is-promise';
 import map from 'fj-map';
@@ -8,13 +8,14 @@ var FINISH = () => FINISH;
 var DONE = () => DONE;
 
 class Action {
-  constructor(matcher, handler) {
+  constructor(matcher, handler, opts = {}) {
     const m = prepareMatcher(matcher);
     if (!m)
       throw new Error(`Invalid matcher: ${ matcher }`);
 
     this.matcher = m;
     this.handler = handler;
+    this.opts = opts;
   }
 }
 
@@ -98,4 +99,4 @@ function prepareAction(action) {
   return action;
 }
 
-export default factory(Action);
+export default factorize(Action);

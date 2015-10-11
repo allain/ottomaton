@@ -10,8 +10,8 @@
     "compile": "babel --stage 2 --optional runtime --source-maps true -d lib/ src/ && chmod +x lib/bin/otto.js",
     "clean": "rm -r lib",
     "pretest": "npm run compile",
-    "test": "blue-tape test/*.js",
-    "watch": "watch 'npm run test' src/ test/",
+    "test": "blue-tape test/*.js | tap-dot",
+    "watch": "watch 'npm run compile' src/ test/",
     "prepublish": "npm run clean && npm run test"
   },
   "repository": {
@@ -39,8 +39,7 @@
     "is-promise": "^2.1.0",
     "map-in": "^1.0.2",
     "minimist": "^1.2.0",
-    "native-promise-only": "^0.8.1",
-    "simple-factory": "allain/simple-factory"
+    "native-promise-only": "^0.8.1"
   },
   "devDependencies": {
     "babel": "^5.8.23",

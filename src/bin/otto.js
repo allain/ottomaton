@@ -52,7 +52,6 @@ function loadScriptFiles(scriptPaths, state) {
 }
 
 let displayError = err => {
-  debug('ERROR %j', err);
   console.error(chalk.red(`ERROR: ${ err.message }`));
   process.exit(1);
 };

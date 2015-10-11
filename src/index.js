@@ -1,7 +1,7 @@
 import Promise from 'native-promise-only';
 import flatten from 'fj-flatten';
 import defaults from 'defaults';
-import factory from 'simple-factory';
+import factorize from 'factorize';
 import mapIn from 'map-in';
 import isPromise from 'is-promise';
 
@@ -83,7 +83,6 @@ class Ottomaton {
       await this._execute(lines, state);
     } catch(err) {
       failure = err;
-      debug('An ERROR Occured: ', err);
     }
 
     try {
@@ -140,7 +139,11 @@ class Ottomaton {
 
       recognized = true;
 
-      args = args.length ? deref(state, args) : [line];
+
+      args = args.length ? args : [line];
+      if (!action.opts || action.opts.deref !== false) {
+        args = deref(state, args);
+      }
 
       let handlerResult;
       const handler = action.handler;
@@ -208,6 +211,4 @@ function deref(state, refs) {
 Ottomaton.Action = Action;
 Ottomaton.LineError = LineError;
 
-export default factory(Ottomaton);
-
-
+export default factorize(Ottomaton);

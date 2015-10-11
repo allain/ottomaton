@@ -23,6 +23,13 @@ test('core - can be created using factory', function (t) {
   t.end();
 });
 
+test('core - can disable dereferencing when building action', function(t) {
+  Ottomaton().register(Action(/^(.*)$/, function(varName) {
+    t.equal(varName, 'VAR_NAME');
+    t.end();
+  }, {deref: false})).run(['VAR_NAME']).catch(t.end);
+});
+
 test('core - if a matcher returns an empty array, then the arg will be the entire line', function (t) {
   return Ottomaton().register(/^a$/, function (line) {
     t.equal(line, 'a');
