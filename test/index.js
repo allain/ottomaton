@@ -23,11 +23,20 @@ test('core - can be created using factory', function (t) {
   t.end();
 });
 
-test('core - can disable dereferencing when building action', function(t) {
+
+test('core - can disable dereferencing and then call deref inside action', function(t) {
   Ottomaton().register(Action(/^(.*)$/, function(varName) {
-    t.equal(varName, 'VAR_NAME');
+    t.equal(varName, 'VAR');
+    t.equal(this.deref(varName), 'Hello!');
     t.end();
-  }, {deref: false})).run(['VAR_NAME']).catch(t.end);
+  }, {deref: false})).run(['VAR'], {VAR: 'Hello!'}).catch(t.end);
+});
+
+test('core - dereferencing to a valur that looks like a ref does not further dereference', function(t) {
+  Ottomaton().register(Action(/^(.*)$/, function(varName) {
+    t.equal(varName, 'STEP');
+    t.end();
+  })).run(['VAR'], {VAR: 'STEP', STEP: 'huh?'}).catch(t.end);
 });
 
 test('core - if a matcher returns an empty array, then the arg will be the entire line', function (t) {

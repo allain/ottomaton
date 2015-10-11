@@ -7,7 +7,7 @@
     "otto": "./lib/bin/otto.js"
   },
   "scripts": {
-    "compile": "babel --stage 2 --optional runtime --source-maps true -d lib/ src/ && chmod +x lib/bin/otto.js",
+    "compile": "babel --stage 2 --optional runtime -d lib/ src/ && chmod +x lib/bin/otto.js",
     "clean": "rm -r lib",
     "pretest": "npm run compile",
     "test": "blue-tape test/*.js | tap-dot",

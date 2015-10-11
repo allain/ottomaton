@@ -67,6 +67,9 @@ class Ottomaton {
     lines = newLines;
 
     state.ottomaton = this;
+    state.deref = function(name) {
+      return deref(state, [name])[0];
+    };
 
     const actions = this._actions = await Action.prepareActions(this.registrations);
 
