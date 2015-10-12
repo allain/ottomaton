@@ -19,8 +19,12 @@ const COMMON_ACTIONS = [
 
 class Ottomaton {
   constructor(opts) {
-    this.opts = defaults(opts, {common: true});
+    this.opts = defaults(opts, {common: true, extraState: {}});
     this.registrations = [].concat(this.opts.common ? COMMON_ACTIONS : []);
+    this.extraState = this.opts.extraState;
+
+    this.extraState.ottomaton = this;
+
     this._actions = null;
   }
 
@@ -65,10 +69,9 @@ class Ottomaton {
     }
     lines = newLines;
 
-    state.ottomaton = this;
-    state.deref = function(name) {
-      return deref(state, [name])[0];
-    };
+    this.extraState.deref = (name) => deref(state, [name])[0];
+
+    Object.keys(this.extraState).forEach(prop => state[prop] = this.extraState[prop]);
 
     const actions = this._actions = await Action.prepareActions(this.registrations);
 
@@ -94,7 +97,7 @@ class Ottomaton {
       // nothing to do here
     }
 
-    delete state.ottomaton;
+    Object.keys(this.extraState).forEach(prop => delete state[prop]);
 
     if (failure) throw failure;
 

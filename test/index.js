@@ -23,6 +23,18 @@ test('core - can be created using factory', function (t) {
   t.end();
 });
 
+test('core - can add extra state props', function(t) {
+  var otto = new Ottomaton({ extraState: { a: 'A' }});
+  t.equal(otto.extraState.a, 'A');
+  otto.extraState.b = 'B';
+
+  return otto.register('test', function() {
+    t.equal(this.a, 'A');
+    t.equal(this.b, 'B');
+  }).run('test').then(function(result) {
+    t.deepEqual(result, {}, 'extra state should not be returns as part of result');
+  });
+});
 
 test('core - can disable dereferencing and then call deref inside action', function(t) {
   Ottomaton().register(Action(/^(.*)$/, function(varName) {

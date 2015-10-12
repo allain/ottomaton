@@ -39,6 +39,8 @@ async function runScripts(scripts, state) {
   for (let script of scripts) {
     await otto.run(script, state);
   }
+
+  return state;
 }
 
 function loadScriptFiles(scriptPaths, state) {
@@ -56,10 +58,31 @@ let displayError = err => {
   process.exit(1);
 };
 
+let startKeys = Object.keys(argv);
+
+let output = state => {
+  var outputState = {};
+
+  Object.keys(state).forEach(function(key) {
+    // Ignore keys that were passed in
+    if (startKeys.indexOf(key) === -1 && key !== 'html') {
+      outputState[key] = state[key];
+    }
+  });
+
+  if (argv.output === 'json') {
+    console.log(JSON.stringify(outputState))
+  } else {
+    Object.keys(outputState).forEach(function(key) {
+      console.log(key, '=', outputState[key]);
+    });
+  }
+};
+
 if (scripts.length) {
-  runScripts(loadScriptFiles(scripts), argv).catch(displayError);
+  runScripts(loadScriptFiles(scripts), argv).then(output, displayError);
 } else {
   getStdin().then(function(src) {
     runScripts([src], argv);
-  }).catch(displayError);
+  }).then(output, displayError);
 }

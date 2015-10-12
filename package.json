@@ -10,8 +10,9 @@
     "compile": "babel --stage 2 --optional runtime -d lib/ src/ && chmod +x lib/bin/otto.js",
     "clean": "rm -r lib",
     "pretest": "npm run compile",
-    "test": "blue-tape test/*.js | tap-dot",
+    "test": "blue-tape test/*.js",
     "watch": "watch 'npm run compile' src/ test/",
+    "dev": "watch 'npm test' src/ test/",
     "prepublish": "npm run clean && npm run test"
   },
   "repository": {
