@@ -28,9 +28,13 @@ test('core - can add extra state props', function(t) {
   t.equal(otto.extraState.a, 'A');
   otto.extraState.b = 'B';
 
-  return otto.register('test', function() {
-    t.equal(this.a, 'A');
-    t.equal(this.b, 'B');
+  return otto.register(function(otto) {
+    otto.extraState.c = 'C';
+    return [];
+  }).register('test', function() {
+    t.equal(this.a, 'A', 'extra state passed in opts works');
+    t.equal(this.b, 'B', 'extra state added to otto while referencing it works');
+    t.equal(this.c, 'C', 'extra state added while registering actions works');
   }).run('test').then(function(result) {
     t.deepEqual(result, {}, 'extra state should not be returns as part of result');
   });
