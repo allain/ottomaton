@@ -17,7 +17,7 @@ const COMMON_ACTIONS = [
   Action(/^\s*(#|REM )/i, Action.DONE),
 
   // Variable Assignment
-  Action(/^(.*) = (.*)$/, (varName, value) => {
+  Action(/^(.*) = (.*)$/, function(varName, value) {
     this[varName] = this.deref(value);
   }, {deref: false})
 ];
@@ -209,7 +209,7 @@ function deref(state, refs) {
     if (match)
       return match[1];
 
-    match = /^([A-Z][A-Z0-9]*_)*[A-Z0-9]+$/g.exec(ref);
+    match = /^([A-Z][A-Z0-9]*_)*[A-Z][A-Z0-9]+$/g.exec(ref);
     if (!match)
       return ref;
 

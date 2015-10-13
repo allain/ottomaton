@@ -61,9 +61,9 @@ test('cli - outputs all additional state to stdout', function(t) {
   });
 });
 
-test('cli - outputs all additional state as json when output is specified as such', function(t) {
+test.only('cli - outputs all additional state as json when output is specified as such', function(t) {
   process.chdir(__dirname);
-  require('child_process').exec('../lib/bin/otto.js ./libraries/set.js ./fixtures/cli-output.txt --output json', function (err, out, stderr) {
+  require('child_process').exec('../lib/bin/otto.js ./fixtures/cli-output.txt --output json', function (err, out, stderr) {
     t.ok(!err, 'no error output');
     t.equal(out, JSON.stringify(
       {X: '10', VAR_NAME: '20', abc: 'Testing 1, 2, 3'}) + '\n',
