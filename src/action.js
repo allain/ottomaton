@@ -62,15 +62,13 @@ Action.build = function build(matcher, ottomaton) {
     return matcher;
 
   if (Array.isArray(matcher))
-    return matcher.map(function(m) {
-      return build(m, ottomaton);
-    });
+    return matcher.map(m => build(m, ottomaton));
 
   if (typeof matcher === 'object' && matcher.handler && matcher.matcher)
     return new Action(matcher.matcher, matcher.handler);
 
   if (typeof matcher === 'object')
-      return Object.values(mapIn(matcher, (handler, m) => new Action(m, handler)));
+    return Object.values(mapIn(matcher, (handler, m) => new Action(m, handler)));
 
   throw new Error('invalid matcher arguments: ' + arguments);
 };

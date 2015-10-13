@@ -14,7 +14,12 @@ const COMMON_ACTIONS = [
   Action(/^\s*$/, Action.DONE),
 
   // Ignore commented lines
-  Action(/^\s*(#|REM )/i, Action.DONE)
+  Action(/^\s*(#|REM )/i, Action.DONE),
+
+  // Variable Assignment
+  Action(/^(.*) = (.*)$/, (varName, value) => {
+    this[varName] = this.deref(value);
+  }, {deref: false})
 ];
 
 class Ottomaton {
@@ -71,9 +76,9 @@ class Ottomaton {
 
     this.extraState.deref = (name) => deref(state, [name])[0];
 
-    Object.keys(this.extraState).forEach(prop => state[prop] = this.extraState[prop]);
-
     const actions = this._actions = await Action.prepareActions(this.registrations);
+
+    Object.keys(this.extraState).forEach(prop => state[prop] = this.extraState[prop]);
 
     const unrecognizedLine = lines.find(line => !actions.find(action => action.matcher(line)));
 
@@ -130,7 +135,10 @@ class Ottomaton {
     let recognized = false;
     let replacement = null;
 
-    debug('executing line %s', line);
+    if (line === Action.FINISH)
+      debug('executing line FINISH');
+    else
+      debug('executing line %s', line);
 
     for (const action of this._actions) {
       var args;
