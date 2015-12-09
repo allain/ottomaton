@@ -24,6 +24,21 @@ const COMMON_ACTIONS = [
     this[varName] = this.deref(value);
   }, {deref: false}),
 
+  // Sleep
+  Action(/^SLEEP (\d+)\s*(ms|s|m)$/i, function(duration, units) {
+    let factors = {
+      'ms': 1,
+      's': 1000,
+      'm': 1000 * 60
+    };
+
+    return new Promise(function(resolve) {
+      setTimeout(function() {
+        resolve(Action.DONE);
+      }, parseInt(duration, 10) * factors[units]);
+    })
+  }),
+
   Action(/^WAIT FOR KEYSTROKE\s*(.*)$/, function() {    
     return new Promise(function(resolve) {
       console.log('Press any key...');
@@ -172,7 +187,6 @@ class Ottomaton {
       }
 
       recognized = true;
-
 
       args = args.length ? args : [line];
       if (!action.opts || action.opts.deref !== false) {

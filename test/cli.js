@@ -47,7 +47,7 @@ test('cli - line errors work', function (t) {
   });
 });
 
-test('cli - outputs all additional state to stdout', function(t) {
+test.skip('cli - outputs all additional state to stdout', function(t) {
   process.chdir(__dirname);
   require('child_process').exec('../lib/bin/otto.js ./libraries/set.js ./fixtures/cli-output.txt', function (err, out, stderr) {
     t.ok(!err, 'no error output');
@@ -61,7 +61,7 @@ test('cli - outputs all additional state to stdout', function(t) {
   });
 });
 
-test.only('cli - outputs all additional state as json when output is specified as such', function(t) {
+test('cli - outputs all additional state as json when output is specified as such', function(t) {
   process.chdir(__dirname);
   require('child_process').exec('../lib/bin/otto.js ./fixtures/cli-output.txt --output json', function (err, out, stderr) {
     t.ok(!err, 'no error output');

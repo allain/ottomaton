@@ -38,10 +38,6 @@ try {
 
 async function runScripts(scripts, state) {
   for (let script of scripts) {
-    if (argv.testing) {
-      script = script.split("\n").join("\nWAIT FOR KEYSTROKE\n");       
-    }
-
     await otto.run(script, state);
   }
 
