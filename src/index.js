@@ -4,10 +4,13 @@ import defaults from 'defaults';
 import factorize from 'factorize';
 import mapIn from 'map-in';
 import isPromise from 'is-promise';
+import keypress from 'keypress';
 
 const debug = require('debug')('ottomaton');
 
 const Action = require('./action');
+
+
 
 const COMMON_ACTIONS = [
   // Skip blank lines
@@ -19,13 +22,31 @@ const COMMON_ACTIONS = [
   // Variable Assignment
   Action(/^(.*) = (.*)$/, function(varName, value) {
     this[varName] = this.deref(value);
-  }, {deref: false})
+  }, {deref: false}),
+
+  Action(/^WAIT FOR KEYSTROKE\s*(.*)$/, function() {    
+    return new Promise(function(resolve) {
+      console.log('Press any key...');
+      keypress(process.stdin);    
+      
+      process.stdin.once('keypress', function(chunk, key) {
+        if (key.name === 'escape') {          
+          return resolve(Action.FINISH);
+        }
+
+        resolve();
+      });
+
+      process.stdin.setRawMode(true);      
+      process.stdin.resume();
+    });  
+  })
 ];
 
 class Ottomaton {
-  constructor(opts) {
+  constructor(opts) {  
     this.opts = defaults(opts, {common: true, extraState: {}});
-    this.registrations = [].concat(this.opts.common ? COMMON_ACTIONS : []);
+    this.registrations = [].concat(this.opts.common ? COMMON_ACTIONS : []);    
     this.extraState = this.opts.extraState;
 
     this.extraState.ottomaton = this;
@@ -145,7 +166,7 @@ class Ottomaton {
       if (action.matcher === Action.FINISH) {
         args = (line === Action.FINISH) ? [] : null;
       } else {
-        args = await Promise.resolve(action.matcher(line));
+        args = await Promise.resolve(action.matcher(line));        
         if (!Array.isArray(args))
           continue;
       }

@@ -60,7 +60,7 @@ let displayError = err => {
 
 let startKeys = Object.keys(argv);
 
-let output = state => {
+let finish = state => {
   var outputState = {};
 
   Object.keys(state).forEach(function(key) {
@@ -77,12 +77,14 @@ let output = state => {
       console.log(key, '=', outputState[key]);
     });
   }
+
+  process.stdin.unref();
 };
 
 if (scripts.length) {
-  runScripts(loadScriptFiles(scripts), argv).then(output, displayError);
+  runScripts(loadScriptFiles(scripts), argv).then(finish, displayError);
 } else {
   getStdin().then(function(src) {
     runScripts([src], argv);
-  }).then(output, displayError);
+  }).then(finish, displayError);
 }
