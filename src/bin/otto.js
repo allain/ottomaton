@@ -7,13 +7,14 @@ const Promise = require('native-promise-only');
 const fs = require('fs');
 const path = require('path');
 const Ottomaton = require('..');
-const otto = Ottomaton();
+
 const argv = require('minimist')(process.argv.slice(2));
 if (argv.version) {
   console.log(require('../package.json').version);
   process.exit(0);
 }
 
+const otto = Ottomaton(argv);
 
 let currentLib;
 const cwd = process.cwd();
@@ -37,6 +38,10 @@ try {
 
 async function runScripts(scripts, state) {
   for (let script of scripts) {
+    if (argv.testing) {
+      script = script.split("\n").join("\nWAIT FOR KEYSTROKE\n");       
+    }
+
     await otto.run(script, state);
   }
 
@@ -78,6 +83,7 @@ let finish = state => {
     });
   }
 
+  // So that any process.stdin.once('data', ...) don't call the prcess to lock up.
   process.stdin.unref();
 };
 
