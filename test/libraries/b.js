@@ -1,7 +1,7 @@
-var Action = require('../..').Action;
+var Action = require('../..').Action
 
 module.exports = [
-  Action('b', function() {
-    console.log('B');
+  Action('b', function () {
+    console.log('B')
   })
-];
+]

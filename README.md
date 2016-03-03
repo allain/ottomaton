@@ -1,6 +1,6 @@
 # ottomaton
 
-A Node.js toolkit for writing automation script DSLs. It is heavily influenced by Cucumber.
+A Node.js toolkit for writing automation script DSLs. It is heavily influenced by Gherkin.
 
 ## Installation
 

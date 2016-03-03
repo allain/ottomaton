@@ -1,7 +1,7 @@
-var Action = require('../..').Action;
+var Action = require('../..').Action
 
 module.exports = [
-  Action('Print "PARAM"', function(paramName) {
-    console.log(this[paramName]);
+  Action('Print "PARAM"', function (paramName) {
+    console.log(this[paramName])
   })
-];
+]
