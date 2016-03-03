@@ -38,7 +38,7 @@ otto.js.register({
     this.result = parseInt(a, 10) + parseInt(b, 10);
   },
   'multiply it by "c"': function(c) {
-    this.result = this.result *= parseInt(c, 10);
+    this.result *= parseInt(c, 10);
   },
   'print it': function() {
     console.log(this.result);
